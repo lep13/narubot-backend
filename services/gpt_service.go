@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-const GPTModel = "text-davinci-003" // Use GPT-3 for now, adjust for GPT-4 if needed
+const GPTModel = "text-davinci-003"
 
 // OpenAI request payload structure
 type GPTRequest struct {
