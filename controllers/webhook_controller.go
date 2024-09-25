@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	"narubot-backend/config"
 	"narubot-backend/services"
 
@@ -41,16 +42,17 @@ func HandleWebhook(c *gin.Context) {
 				return
 			}
 
-			// Get GenAI response
-			genAIResponse, err := services.GetGenAIResponse(messageText)
+			// Generate response from Vertex AI
+			vertexResponse, err := services.GenerateVertexAIResponse(messageText, cfg.ServiceAccountKey, cfg.GoogleProjectID, cfg.GoogleModelID, cfg.GoogleRegion)
 			if err != nil {
+				fmt.Println("Error generating Vertex AI response:", err)
 				services.SendMessageToWebex(roomId, "I'm sorry, I couldn't generate a response.", cfg.WebexAccessToken)
-				c.JSON(500, gin.H{"status": "failed to get GenAI response"})
+				c.JSON(500, gin.H{"status": "failed to generate Vertex AI response"})
 				return
 			}
 
-			// Send GenAI response back to Webex
-			err = services.SendMessageToWebex(roomId, genAIResponse, cfg.WebexAccessToken)
+			// Send Vertex AI response back to Webex
+			err = services.SendMessageToWebex(roomId, vertexResponse, cfg.WebexAccessToken)
 			if err != nil {
 				c.JSON(500, gin.H{"status": "failed to send message"})
 				return

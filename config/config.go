@@ -4,41 +4,45 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
 )
 
-// Config structure to hold secrets from AWS Secrets Manager
-type Config struct {
-	BotEmail          string `json:"BOT_EMAIL"`
-	GoogleProjectID   string `json:"GOOGLE_PROJECT_ID"`
-	WebexAccessToken  string `json:"WEBEX_ACCESS_TOKEN"`
-	ServiceAccountKey string `json:"SERVICE_ACCOUNT_KEY"`
+// SecretsManagerInterface defines the interface for Secrets Manager client methods used in our code.
+type SecretsManagerInterface interface {
+	GetSecretValue(ctx context.Context, params *secretsmanager.GetSecretValueInput, optFns ...func(*secretsmanager.Options)) (*secretsmanager.GetSecretValueOutput, error)
 }
 
-// LoadConfig fetches secrets from AWS Secrets Manager and loads the Google service account key
+// SecretManagerFunc allows for injecting a custom Secrets Manager function for testing.
+var SecretManagerFunc = func() (SecretsManagerInterface, error) {
+	cfg, err := loadAWSConfig(context.TODO())
+	if err != nil {
+		return nil, err
+	}
+	return secretsmanager.NewFromConfig(cfg), nil
+}
+
+// loadAWSConfig is a variable that points to the function that loads AWS config.
+// To replace it with a mock in tests.
+var loadAWSConfig = config.LoadDefaultConfig
+
+// Config structure to hold secrets from AWS Secrets Manager
+type Config struct {
+	BotEmail           string `json:"BOT_EMAIL"`
+	WebexAccessToken   string `json:"WEBEX_ACCESS_TOKEN"`
+	ServiceAccountKey  string `json:"SERVICE_ACCOUNT_KEY"`
+	GoogleProjectID    string `json:"GOOGLE_PROJECT_ID"`
+	GoogleModelID      string `json:"GOOGLE_MODEL_ID"`
+	GoogleRegion       string `json:"GOOGLE_REGION"`
+}
+
+// LoadConfig fetches the secrets from AWS Secrets Manager and returns a Config struct
 func LoadConfig() (*Config, error) {
 	secretName := "webex_bot"
 
-	// Load Google Service Account credentials from file or AWS Secrets Manager
-	serviceAccountKey := "gifted-fragment-436605-u0-d3cc86aed1ab.json" // Replace with the actual path
-
-	file, err := os.ReadFile(serviceAccountKey)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read Google service account file: %w", err)
-	}
-
-	var config Config
-	err = json.Unmarshal(file, &config)
-	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal Google service account file: %w", err)
-	}
-
-	// Retrieve AWS Secrets Manager values
-	svc, err := loadAWSSecretsManager()
+	svc, err := SecretManagerFunc()
 	if err != nil {
 		return nil, fmt.Errorf("failed to load AWS config: %w", err)
 	}
@@ -53,19 +57,12 @@ func LoadConfig() (*Config, error) {
 	}
 
 	secretString := *result.SecretString
-	err = json.Unmarshal([]byte(secretString), &config)
+	config := &Config{}
+
+	err = json.Unmarshal([]byte(secretString), config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal secret string: %w", err)
 	}
 
-	return &config, nil
-}
-
-// loadAWSSecretsManager is used to initialize AWS Secrets Manager
-func loadAWSSecretsManager() (*secretsmanager.Client, error) {
-	cfg, err := config.LoadDefaultConfig(context.TODO())
-	if err != nil {
-		return nil, err
-	}
-	return secretsmanager.NewFromConfig(cfg), nil
+	return config, nil
 }

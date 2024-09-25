@@ -1,54 +1,99 @@
 package services
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 
-	aiplatform "cloud.google.com/go/aiplatform/apiv1"
-	"cloud.google.com/go/aiplatform/apiv1/aiplatformpb"
-	"google.golang.org/api/option"
-	"google.golang.org/protobuf/types/known/structpb"
-	"narubot-backend/config"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
 )
 
-// GetGenAIResponse queries Google Gen AI (Vertex AI) for a completion based on the given prompt
-func GetGenAIResponse(prompt string) (string, error) {
+type VertexRequest struct {
+	Instances []map[string]interface{} `json:"instances"`
+}
+
+type VertexResponse struct {
+	Candidates []map[string]interface{} `json:"candidates"`
+}
+
+// GenerateVertexAIResponse sends a request to the Vertex AI model using the Generative AI API
+func GenerateVertexAIResponse(prompt, serviceAccountKey, projectID, modelID, region string) (string, error) {
+	// Use the Generative AI API endpoint
+	url := fmt.Sprintf("https://%s-aiplatform.googleapis.com/v1/projects/%s/locations/%s/publishers/google/models/%s:generateText", region, projectID, region, modelID)
+
+	// Create the request payload with the text prompt
+	reqBody := map[string]interface{}{
+		"prompt": map[string]interface{}{
+			"text": prompt,
+		},
+	}
+	jsonData, err := json.Marshal(reqBody)
+	if err != nil {
+		return "", err
+	}
+
+	// Create an OAuth2 token from the service account key
 	ctx := context.Background()
-
-	cfg, err := config.LoadConfig()
+	credentials, err := google.CredentialsFromJSON(ctx, []byte(serviceAccountKey), "https://www.googleapis.com/auth/cloud-platform")
 	if err != nil {
-		return "", fmt.Errorf("failed to load config: %w", err)
+		return "", fmt.Errorf("failed to generate credentials: %v", err)
 	}
 
-	client, err := aiplatform.NewPredictionClient(ctx, option.WithCredentialsFile(cfg.ServiceAccountKey))
+	// Get the token
+	token, err := credentials.TokenSource.Token()
 	if err != nil {
-		return "", fmt.Errorf("failed to create GenAI client: %w", err)
+		return "", fmt.Errorf("failed to retrieve token: %v", err)
 	}
-	defer client.Close()
 
-	// Endpoint for Vertex AI prediction
-	endpoint := fmt.Sprintf("projects/%s/locations/us-central1/publishers/google/models/text-bison", cfg.GoogleProjectID)
+	// Create an HTTP client with the token
+	client := oauth2.NewClient(ctx, credentials.TokenSource)
 
-	// Properly initializing the structpb.Value with the prompt
-	structVal, err := structpb.NewValue(prompt)
+	// Create a POST request to send the prompt
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
-		return "", fmt.Errorf("failed to create structpb.Value: %w", err)
+		return "", fmt.Errorf("failed to create request: %v", err)
 	}
 
-	req := &aiplatformpb.PredictRequest{
-		Endpoint:  endpoint,
-		Instances: []*structpb.Value{structVal},
-	}
+	req.Header.Set("Authorization", "Bearer "+token.AccessToken)
+	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := client.Predict(ctx, req)
+	// Send the request
+	resp, err := client.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("GenAI request failed: %w", err)
+		return "", fmt.Errorf("failed to send request: %v", err)
+	}
+	defer resp.Body.Close()
+
+	// Read the response
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("failed to read response body: %v", err)
 	}
 
-	if len(resp.Predictions) > 0 {
-		// Assuming the response text is located in the first prediction's string value
-		return resp.Predictions[0].GetStringValue(), nil
+	// Check if the response was successful
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("non-OK HTTP status: %v", resp.Status)
 	}
 
-	return "", fmt.Errorf("no response from GenAI")
+	// Parse the response body
+	var res VertexResponse
+	err = json.Unmarshal(body, &res)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse response: %v", err)
+	}
+
+	// Extract the generated text from the response
+	if len(res.Candidates) == 0 {
+		return "", fmt.Errorf("no candidates found in response")
+	}
+	responseText, ok := res.Candidates[0]["output"].(string)
+	if !ok {
+		return "", fmt.Errorf("no output field in response")
+	}
+
+	return responseText, nil
 }
