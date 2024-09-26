@@ -2,14 +2,11 @@ package services
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
+	"narubot-backend/config"
 	"net/http"
-
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/google"
 )
 
 type VertexRequest struct {
@@ -17,51 +14,47 @@ type VertexRequest struct {
 }
 
 type VertexResponse struct {
-	Candidates []map[string]interface{} `json:"candidates"`
+	Predictions []map[string]interface{} `json:"predictions"`
 }
 
 // GenerateVertexAIResponse sends a request to the Vertex AI model using the Generative AI API
-func GenerateVertexAIResponse(prompt, serviceAccountKey, projectID, modelID, region string) (string, error) {
+func GenerateVertexAIResponse(prompt string, cfg *config.Config) (string, error) {
 	// Use the Generative AI API endpoint
-	url := fmt.Sprintf("https://%s-aiplatform.googleapis.com/v1/projects/%s/locations/%s/publishers/google/models/%s:generateText", region, projectID, region, modelID)
+	url := fmt.Sprintf("https://%s-aiplatform.googleapis.com/v1/projects/%s/locations/%s/publishers/google/models/%s:predict",
+		cfg.GoogleRegion, cfg.GoogleProjectID, cfg.GoogleRegion, cfg.GoogleModelID)
 
 	// Create the request payload with the text prompt
 	reqBody := map[string]interface{}{
-		"prompt": map[string]interface{}{
-			"text": prompt,
+		"instances": []map[string]interface{}{
+			{
+				"messages": []map[string]interface{}{
+					{
+						"content": prompt,
+					},
+				},
+			},
 		},
 	}
+
 	jsonData, err := json.Marshal(reqBody)
 	if err != nil {
 		return "", err
 	}
 
-	// Create an OAuth2 token from the service account key
-	ctx := context.Background()
-	credentials, err := google.CredentialsFromJSON(ctx, []byte(serviceAccountKey), "https://www.googleapis.com/auth/cloud-platform")
-	if err != nil {
-		return "", fmt.Errorf("failed to generate credentials: %v", err)
-	}
+	// Use the GenAI Access Token from Secrets Manager
+	token := cfg.GenAIAccessToken
 
-	// Get the token
-	token, err := credentials.TokenSource.Token()
-	if err != nil {
-		return "", fmt.Errorf("failed to retrieve token: %v", err)
-	}
-
-	// Create an HTTP client with the token
-	client := oauth2.NewClient(ctx, credentials.TokenSource)
-
-	// Create a POST request to send the prompt
+	// Create an HTTP client and make the POST request
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return "", fmt.Errorf("failed to create request: %v", err)
 	}
 
-	req.Header.Set("Authorization", "Bearer "+token.AccessToken)
+	// Set the headers for authorization and content-type
+	req.Header.Set("Authorization", "Bearer "+token)
 	req.Header.Set("Content-Type", "application/json")
 
-	// Send the request
+	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("failed to send request: %v", err)
@@ -87,12 +80,15 @@ func GenerateVertexAIResponse(prompt, serviceAccountKey, projectID, modelID, reg
 	}
 
 	// Extract the generated text from the response
-	if len(res.Candidates) == 0 {
-		return "", fmt.Errorf("no candidates found in response")
+	if len(res.Predictions) == 0 {
+		return "", fmt.Errorf("no predictions found in response")
 	}
-	responseText, ok := res.Candidates[0]["output"].(string)
+
+	candidates := res.Predictions[0]["candidates"].([]interface{})
+	firstCandidate := candidates[0].(map[string]interface{})
+	responseText, ok := firstCandidate["content"].(string)
 	if !ok {
-		return "", fmt.Errorf("no output field in response")
+		return "", fmt.Errorf("no content field in response")
 	}
 
 	return responseText, nil

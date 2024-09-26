@@ -43,7 +43,7 @@ func HandleWebhook(c *gin.Context) {
 			}
 
 			// Generate response from Vertex AI
-			vertexResponse, err := services.GenerateVertexAIResponse(messageText, cfg.ServiceAccountKey, cfg.GoogleProjectID, cfg.GoogleModelID, cfg.GoogleRegion)
+			vertexResponse, err := services.GenerateVertexAIResponse(messageText, cfg)  // Pass cfg as a whole
 			if err != nil {
 				fmt.Println("Error generating Vertex AI response:", err)
 				services.SendMessageToWebex(roomId, "I'm sorry, I couldn't generate a response.", cfg.WebexAccessToken)

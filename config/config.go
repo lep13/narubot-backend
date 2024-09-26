@@ -30,17 +30,18 @@ var loadAWSConfig = config.LoadDefaultConfig
 
 // Config structure to hold secrets from AWS Secrets Manager
 type Config struct {
-	BotEmail           string `json:"BOT_EMAIL"`
-	WebexAccessToken   string `json:"WEBEX_ACCESS_TOKEN"`
-	ServiceAccountKey  string `json:"SERVICE_ACCOUNT_KEY"`
-	GoogleProjectID    string `json:"GOOGLE_PROJECT_ID"`
-	GoogleModelID      string `json:"GOOGLE_MODEL_ID"`
-	GoogleRegion       string `json:"GOOGLE_REGION"`
+	BotEmail          string `json:"BOT_EMAIL"`
+	WebexAccessToken  string `json:"WEBEX_ACCESS_TOKEN"`
+	ServiceAccountKey string `json:"SERVICE_ACCOUNT_KEY"`
+	GoogleProjectID   string `json:"GOOGLE_PROJECT_ID"`
+	GoogleModelID     string `json:"GOOGLE_MODEL_ID"`
+	GoogleRegion      string `json:"GOOGLE_REGION"`
+	GenAIAccessToken  string `json:"GENAI_ACCESS_TOKEN"` // GenAI OAuth token
 }
 
 // LoadConfig fetches the secrets from AWS Secrets Manager and returns a Config struct
 func LoadConfig() (*Config, error) {
-	secretName := "webex_bot"
+	secretName := "webex_bot" // Make sure this secret name includes the GenAI access token
 
 	svc, err := SecretManagerFunc()
 	if err != nil {
