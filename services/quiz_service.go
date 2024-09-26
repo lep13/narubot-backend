@@ -10,17 +10,16 @@ import (
 	"narubot-backend/models"
 
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // CreateQuizSession initializes a quiz session for a user
 func CreateQuizSession(userID string) (*mongo.InsertOneResult, error) {
-	collection := db.Client.Database("narubot").Collection("quiz_sessions")
+	collection := db.MongoClient.Database("narubot").Collection("quiz_sessions")
 	session := models.QuizSession{
 		UserID:      userID,
-		CurrentQNo:  0,                       // Start from question 0
-		Scores:      make(map[string]int),    // Initialize empty score map
+		CurrentQNo:  0,                    // Start from question 0
+		Scores:      make(map[string]int), // Initialize empty score map
 		IsCompleted: false,
 		LastUpdated: time.Now().Unix(),
 	}
@@ -36,7 +35,7 @@ func CreateQuizSession(userID string) (*mongo.InsertOneResult, error) {
 
 // GetQuizSession retrieves the current session for the user
 func GetQuizSession(userID string) (*models.QuizSession, error) {
-	collection := db.Client.Database("narubot").Collection("quiz_sessions")
+	collection := db.MongoClient.Database("narubot").Collection("quiz_sessions")
 	filter := bson.M{"user_id": userID}
 
 	var session models.QuizSession
@@ -55,7 +54,7 @@ func GetQuizSession(userID string) (*models.QuizSession, error) {
 
 // UpdateQuizSession updates the session after each answer
 func UpdateQuizSession(userID string, questionNo int, updatedScores map[string]int) error {
-	collection := db.Client.Database("narubot").Collection("quiz_sessions")
+	collection := db.MongoClient.Database("narubot").Collection("quiz_sessions")
 
 	filter := bson.M{"user_id": userID}
 	update := bson.M{
@@ -77,7 +76,7 @@ func UpdateQuizSession(userID string, questionNo int, updatedScores map[string]i
 
 // CompleteQuizSession marks the quiz as completed
 func CompleteQuizSession(userID string) error {
-	collection := db.Client.Database("narubot").Collection("quiz_sessions")
+	collection := db.MongoClient.Database("narubot").Collection("quiz_sessions")
 
 	filter := bson.M{"user_id": userID}
 	update := bson.M{

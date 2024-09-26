@@ -2,7 +2,7 @@ package controllers
 
 import (
 	"fmt"
-	"narubot-backend/config"
+	"narubot-backend/config" 
 	"narubot-backend/services"
 
 	"github.com/gin-gonic/gin"
@@ -27,7 +27,7 @@ func HandleWebhook(c *gin.Context) {
 		}
 
 		// Load configuration
-		cfg, err := config.LoadConfig()
+		cfg, err := config.LoadConfig()  
 		if err != nil {
 			c.JSON(500, gin.H{"status": "failed to load config"})
 			return

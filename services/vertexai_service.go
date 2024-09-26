@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"narubot-backend/config"
+	"narubot-backend/models"  
 	"net/http"
 )
 
@@ -18,7 +18,7 @@ type VertexResponse struct {
 }
 
 // GenerateVertexAIResponse sends a request to the Vertex AI model using the Generative AI API
-func GenerateVertexAIResponse(prompt string, cfg *config.Config) (string, error) {
+func GenerateVertexAIResponse(prompt string, cfg *models.Config) (string, error) {  // Updated to models.Config
 	// Use the Generative AI API endpoint
 	url := fmt.Sprintf("https://%s-aiplatform.googleapis.com/v1/projects/%s/locations/%s/publishers/google/models/%s:predict",
 		cfg.GoogleRegion, cfg.GoogleProjectID, cfg.GoogleRegion, cfg.GoogleModelID)
