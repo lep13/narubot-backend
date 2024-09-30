@@ -4,7 +4,7 @@ import (
     "context"
     "encoding/json"
     "fmt"
-    "narubot-backend/models" 
+    "github.com/lep13/narubot-backend/models" 
 
     "github.com/aws/aws-sdk-go-v2/aws"
     "github.com/aws/aws-sdk-go-v2/config"

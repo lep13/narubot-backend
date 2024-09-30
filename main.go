@@ -1,7 +1,7 @@
 package main
 
 import (
-    "narubot-backend/router"
+    "github.com/lep13/narubot-backend/router"
 )
 
 func main() {

@@ -1,7 +1,7 @@
 package router
 
 import (
-    "narubot-backend/controllers"
+    "github.com/lep13/narubot-backend/controllers"
     "github.com/gin-gonic/gin"
 )
 

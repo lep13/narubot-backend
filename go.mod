@@ -1,4 +1,4 @@
-module narubot-backend
+module github.com/lep13/narubot-backend
 
 go 1.22.3
 

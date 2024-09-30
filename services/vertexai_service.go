@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"narubot-backend/models"  
+	"github.com/lep13/narubot-backend/models"  
 	"net/http"
 )
 
