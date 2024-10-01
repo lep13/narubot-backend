@@ -8,6 +8,11 @@ type QuizSession struct {
 	LastUpdated int64          `bson:"last_updated"`
 }
 
+type CharacterInfo struct{
+	Description string `json:"description"`
+    Image       string `json:"image"`
+}
+
 // UpdateScore updates the score based on the selected answer.
 func (qs *QuizSession) UpdateScore(answer string) {
 	// You can map answers to specific character scores here.

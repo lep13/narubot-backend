@@ -1,95 +1,94 @@
 {
-    "questions": [
-      {
-        "question": "What’s your preferred way to handle a conflict?",
-        "options": [
-          "Talk it out diplomatically (Sakura)",
-          "Charge in headfirst! (Naruto)",
-          "Stay calm and think before acting (Kakashi)",
-          "Manipulate events from behind the scenes (Itachi)"
-        ]
-      },
-      {
-        "question": "How do you view your friends?",
-        "options": [
-          "They are my most important bonds (Naruto)",
-          "I distance myself to avoid getting hurt (Sasuke)",
-          "I’d do anything to protect them (Hinata)",
-          "I test their loyalty (Obito)"
-        ]
-      },
-      {
-        "question": "What drives you?",
-        "options": [
-          "Desire for recognition (Naruto)",
-          "Justice and revenge (Sasuke)",
-          "Protecting those I love (Minato)",
-          "Leaving a legacy of wisdom (Jiraiya)"
-        ]
-      },
-      {
-        "question": "What’s your biggest strength?",
-        "options": [
-          "Physical power and determination (Naruto)",
-          "Intelligence and strategy (Kakashi)",
-          "Cunning and resourcefulness (Obito)",
-          "Compassion and empathy (Hinata)"
-        ]
-      },
-      {
-        "question": "How do you relax after a long day?",
-        "options": [
-          "Training even more (Naruto)",
-          "Meditation and reflection (Kakashi)",
-          "Reading and writing (Jiraiya)",
-          "Spending time with friends (Hinata)"
-        ]
-      },
-      {
-        "question": "What role do you usually take in a group?",
-        "options": [
-          "The leader (Naruto)",
-          "The silent supporter (Hinata)",
-          "The strategist (Kakashi)",
-          "The rebel (Sasuke)"
-        ]
-      },
-      {
-        "question": "How do you handle failure?",
-        "options": [
-          "Push myself harder (Naruto)",
-          "Withdraw and reflect (Sasuke)",
-          "Seek guidance from a mentor (Jiraiya)",
-          "Analyze what went wrong and improve (Minato)"
-        ]
-      },
-      {
-        "question": "What’s your fighting style?",
-        "options": [
-          "All-out offensive (Naruto)",
-          "Long-range tactics (Kakashi)",
-          "Close combat with precision (Sasuke)",
-          "Support and defense (Hinata)"
-        ]
-      },
-      {
-        "question": "Which is most important to you?",
-        "options": [
-          "Becoming stronger (Naruto)",
-          "Protecting loved ones (Minato)",
-          "Achieving personal goals (Sasuke)",
-          "Teaching others (Jiraiya)"
-        ]
-      },
-      {
-        "question": "What’s your biggest fear?",
-        "options": [
-          "Failing those I care about (Minato)",
-          "Being weak (Sasuke)",
-          "Losing loved ones (Hinata)",
-          "Losing my identity (Obito)"
-        ]
+  "questions": [
+    {
+      "question": "What’s your preferred way to handle a conflict?",
+      "options": {
+        "Talk it out diplomatically": {"Sakura": 1},
+        "Charge in headfirst!": {"Naruto": 1},
+        "Stay calm and think before acting": {"Kakashi": 1},
+        "Manipulate events from behind the scenes": {"Itachi": 1}
       }
-    ]
-  }
-  
+    },
+    {
+      "question": "How do you view your friends?",
+      "options": {
+        "They are my most important bonds": {"Naruto": 1},
+        "I distance myself to avoid getting hurt": {"Sasuke": 1},
+        "I’d do anything to protect them": {"Hinata": 1},
+        "I test their loyalty": {"Obito": 1}
+      }
+    },
+    {
+      "question": "What drives you?",
+      "options": {
+        "Desire for recognition": {"Naruto": 1},
+        "Justice and revenge": {"Sasuke": 1},
+        "Protecting those I love": {"Minato": 1},
+        "Leaving a legacy of wisdom": {"Jiraiya": 1}
+      }
+    },
+    {
+      "question": "What’s your biggest strength?",
+      "options": {
+        "Physical power and determination": {"Naruto": 1},
+        "Intelligence and strategy": {"Kakashi": 1},
+        "Cunning and resourcefulness": {"Obito": 1},
+        "Compassion and empathy": {"Hinata": 1}
+      }
+    },
+    {
+      "question": "How do you relax after a long day?",
+      "options": {
+        "Training even more": {"Naruto": 1},
+        "Meditation and reflection": {"Kakashi": 1},
+        "Reading and writing": {"Jiraiya": 1},
+        "Spending time with friends": {"Hinata": 1}
+      }
+    },
+    {
+      "question": "What role do you usually take in a group?",
+      "options": {
+        "The leader": {"Naruto": 1},
+        "The silent supporter": {"Hinata": 1},
+        "The strategist": {"Kakashi": 1},
+        "The rebel": {"Sasuke": 1}
+      }
+    },
+    {
+      "question": "How do you handle failure?",
+      "options": {
+        "Push myself harder": {"Naruto": 1},
+        "Withdraw and reflect": {"Sasuke": 1},
+        "Seek guidance from a mentor": {"Jiraiya": 1},
+        "Analyze what went wrong and improve": {"Minato": 1}
+      }
+    },
+    {
+      "question": "What’s your fighting style?",
+      "options": {
+        "All-out offensive": {"Naruto": 1},
+        "Long-range tactics": {"Kakashi": 1},
+        "Close combat with precision": {"Sasuke": 1},
+        "Support and defense": {"Hinata": 1}
+      }
+    },
+    {
+      "question": "Which is most important to you?",
+      "options": {
+        "Becoming stronger": {"Naruto": 1},
+        "Protecting loved ones": {"Minato": 1},
+        "Achieving personal goals": {"Sasuke": 1},
+        "Teaching others": {"Jiraiya": 1}
+      }
+    },
+    {
+      "question": "What’s your biggest fear?",
+      "options": {
+        "Failing those I care about": {"Minato": 1},
+        "Being weak": {"Sasuke": 1},
+        "Losing loved ones": {"Hinata": 1},
+        "Losing my identity": {"Obito": 1}
+      }
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+{
+    "characters": {
+      "Naruto": {
+        "description": "Naruto Uzumaki, the determined ninja who never gives up.",
+        "image": "https://pbs.twimg.com/profile_images/1261998103411994624/qXrcz6mb_400x400.jpg"
+      },
+      "Sasuke": {
+        "description": "Sasuke Uchiha, the lone warrior seeking redemption.",
+        "image": "https://th.bing.com/th/id/R.520f7f14ed7aaae728c7e0684ea1149e?rik=rS5R3%2bRVItluDA&riu=http%3a%2f%2fwww.pixelstalk.net%2fwp-content%2fuploads%2f2016%2f05%2fSasuke-Wallpaper-photo.jpg&ehk=YBa155B2ZvHo0qLbMRIxZGIiOl9pk6X8wP6WaP5DYas%3d&risl=&pid=ImgRaw&r=0"
+      },
+      "Hinata": {
+        "description": "Hinata Hyuga, the kind-hearted and strong-willed ninja.",
+        "image": "https://i.pinimg.com/originals/f4/46/6f/f4466f61628bc984fe1561da707bd07f.jpg"
+      },
+      "Kakashi": {
+        "description": "Kakashi Hatake, the calm, collected, and strategic leader.",
+        "image": "https://th.bing.com/th/id/R.253d69fe0365ea2082acf7c8095385a3?rik=ArrZX144S4r2OQ&riu=http%3a%2f%2f4.bp.blogspot.com%2f-LNm9Pzcnuco%2fT5R_gxAI1UI%2fAAAAAAAAABQ%2f8iSm-qvZBb0%2fs1600%2fkakashi%2bchidori.jpg&ehk=%2b6o2l%2bk5l06VBwqLIsD0TVbTcR%2fi6OCTpniiF6o2Gzg%3d&risl=&pid=ImgRaw&r=0"
+      },
+      "Obito": {
+        "description": "Obito Uchiha, the tragic anti-hero with a conflicted past.",
+        "image": "https://th.bing.com/th/id/OIP.y0wkjsYH2GK_W9dvdRKH4AHaEW?rs=1&pid=ImgDetMain"
+      },
+      "Itachi": {
+        "description": "Itachi Uchiha, the complex genius driven by love and sacrifice.",
+        "image": "https://cdnb.artstation.com/p/assets/images/images/043/218/317/large/aswin-ragothaman-itachi-uchiha.jpg?1636637115"
+      },
+      "Minato": {
+        "description": "Minato Namikaze, the Flash of Konoha, known for his speed and precision.",
+        "image": "https://dthezntil550i.cloudfront.net/1k/latest/1k2104102223196670020034883/1280_960/6c18d09e-05e1-4c13-84ce-ccb11f179133.jpg"
+      },
+      "Killer Bee": {
+        "description": "Killer Bee, the fearless and fun-loving ninja with immense strength.",
+        "image": "https://th.bing.com/th/id/OIP.3npQDXH6CtD0xaCrj_8D2QHaGK?rs=1&pid=ImgDetMain"
+      },
+      "Jiraiya": {
+        "description": "Jiraiya, the legendary sage with a heart of gold and a sense of humor.",
+        "image": "https://th.bing.com/th/id/R.8064dbb46c00a67b9c4b092e18daf85b?rik=gSNDToMuYnurpg&riu=http%3a%2f%2f2.bp.blogspot.com%2f-ODnKd5kcdjQ%2fUPua7T2jNAI%2fAAAAAAAAACs%2fOBmjkCt0UaA%2fs1600%2fjiraiya_ero_sennin_by_shadowbanes-d4gah3t.jpg&ehk=6eD%2fuziWH8c2sVn%2bb5OPWmzmlAD9G4dsFNJ7ZBb9vk8%3d&risl=&pid=ImgRaw&r=0"
+      },
+      "Sakura": {
+        "description": "Sakura Haruno, the determined and intelligent ninja with unmatched strength.",
+        "image": "https://imgix.ranker.com/user_node_img/50088/1001755628/original/it-and-_39_s-my-turn-photo-u1?w=650&q=50&fm=pjpg&fit=crop&crop=faces"
+      }
+    }
+  }
+  
