@@ -122,14 +122,20 @@ func ResetQuizSession(roomId string) error {
 
 
 ///////////////////Quiz Progress and Response Handling/////////////////////
-// SendMessageWithCard sends an adaptive card to Webex
+// SendMessageWithCard sends a Webex adaptive card to the room
 func SendMessageWithCard(roomId string, card map[string]interface{}, accessToken string) error {
-	cardData, err := json.Marshal(card)
+	messageData := map[string]interface{}{
+		"roomId":      roomId,
+		"markdown":    "Narubot interactive card",
+		"attachments": []interface{}{card},
+	}
+
+	jsonData, err := json.Marshal(messageData)
 	if err != nil {
 		return fmt.Errorf("failed to marshal card: %v", err)
 	}
 
-	req, err := http.NewRequest("POST", "https://webexapis.com/v1/messages", bytes.NewBuffer(cardData))
+	req, err := http.NewRequest("POST", "https://webexapis.com/v1/messages", bytes.NewBuffer(jsonData))
 	if err != nil {
 		return fmt.Errorf("failed to create request: %v", err)
 	}
@@ -145,7 +151,10 @@ func SendMessageWithCard(roomId string, card map[string]interface{}, accessToken
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("non-OK HTTP status: %v", resp.Status)
+		var responseBody map[string]interface{}
+		json.NewDecoder(resp.Body).Decode(&responseBody)
+		fmt.Printf("Error details: %+v\n", responseBody)  // Log the error details from Webex API
+		return fmt.Errorf("non-OK HTTP status: %s", resp.Status)
 	}
 
 	return nil

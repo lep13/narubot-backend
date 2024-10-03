@@ -15,6 +15,7 @@ func SetupRouter() *gin.Engine {
 
     // Webhook endpoint
     r.POST("/webhook", controllers.HandleWebhook)
+    // r.POST("/webhook", controllers.HandleWebhookTestCard) //for test card
 
     return r
 }

@@ -63,33 +63,35 @@ type CardAction struct {
 // CreateGreetingCard generates a Webex adaptive card for the greeting with clickable options
 func CreateGreetingCard() (map[string]interface{}, error) {
 	card := map[string]interface{}{
-		"type": "AdaptiveCard",
-		"body": []interface{}{
-			map[string]interface{}{
-				"type":  "TextBlock",
-				"text":  "Narubot is here, dattabayo! What do you want to do?",
-				"weight": "Bolder",
-				"size":  "Medium",
+		"contentType": "application/vnd.microsoft.card.adaptive",
+		"content": map[string]interface{}{
+			"type":    "AdaptiveCard",
+			"version": "1.0",
+			"body": []map[string]interface{}{
+				{
+					"type": "TextBlock",
+					"text": "Narubot is here, dattabayo! What would you like to do?",
+					"weight": "Bolder",
+					"size": "Medium",
+				},
 			},
-		},
-		"actions": []interface{}{
-			map[string]interface{}{
-				"type":  "Action.Submit",
-				"title": "Ask me a question about Naruto",
-				"data": map[string]string{  // Adjusting to ensure data contains the custom action
-					"action": "AskQuestion",
-				}, 
-			},
-			map[string]interface{}{
-				"type":  "Action.Submit",
-				"title": "Take a personality quiz",
-				"data": map[string]string{
-					"action": "StartQuiz",
+			"actions": []map[string]interface{}{
+				{
+					"type":  "Action.Submit",
+					"title": "Ask me a question about Naruto",
+					"data": map[string]string{
+						"action": "AskQuestion",
+					},
+				},
+				{
+					"type":  "Action.Submit",
+					"title": "Take a personality quiz",
+					"data": map[string]string{
+						"action": "StartQuiz",
+					},
 				},
 			},
 		},
-		"$schema":  "http://adaptivecards.io/schemas/adaptive-card.json",
-		"version":  "1.2",
 	}
 	return card, nil
 }
