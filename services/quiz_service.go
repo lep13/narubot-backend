@@ -22,22 +22,22 @@ import (
 ///////////////////////Quiz Session Management/////////////////////////////
 // CreateQuizSession initializes a quiz session for a user
 func CreateQuizSession(userID string) (*models.QuizSession, error) {
-	collection := db.MongoClient.Database("narubot").Collection("quiz_sessions")
-	session := models.QuizSession{
-		UserID:      userID,
-		CurrentQNo:  0,                    // Start from question 0
-		Scores:      make(map[string]int), // Initialize empty score map
-		IsCompleted: false,
-		LastUpdated: time.Now().Unix(),
-	}
+    collection := db.MongoClient.Database("narubot").Collection("quiz_sessions")
+    session := models.QuizSession{
+        UserID:      userID,
+        CurrentQNo:  0,                    // Start from question 0
+        Scores:      make(map[string]int), // Initialize empty score map
+        IsCompleted: false,
+        LastUpdated: time.Now().Unix(),
+    }
 
-	_, err := collection.InsertOne(context.Background(), session)
-	if err != nil {
-		log.Printf("Error creating session for user %s: %v", userID, err)
-		return nil, err
-	}
+    _, err := collection.InsertOne(context.Background(), session)
+    if err != nil {
+        log.Printf("Error creating session for user %s: %v", userID, err)
+        return nil, err
+    }
 
-	return &session, nil
+    return &session, nil
 }
 
 // GetUserQuizSession retrieves the current session for the user
@@ -153,107 +153,128 @@ func SendMessageWithCard(roomId string, card map[string]interface{}, accessToken
 
 // LoadQuizQuestions loads the quiz questions and options from a JSON file
 func LoadQuizQuestions(filename string) ([]models.QuizQuestion, error) {
-	return nil, nil // You can fill in the implementation here
+    file, err := os.Open(filename)
+    if err != nil {
+        return nil, fmt.Errorf("could not open quiz file: %v", err)
+    }
+    defer file.Close()
+
+    var questions []models.QuizQuestion
+    decoder := json.NewDecoder(file)
+    err = decoder.Decode(&questions)
+    if err != nil {
+        return nil, fmt.Errorf("failed to decode quiz questions: %v", err)
+    }
+
+    return questions, nil
 }
 
-// StartQuiz initializes the personality quiz and sends the first question
 func StartQuiz(roomId, accessToken string) error {
-	questions, err := LoadQuizQuestions("quiz_questions.json")
-	if err != nil {
-		return fmt.Errorf("failed to load quiz questions: %v", err)
-	}
+    // Load quiz questions
+    questions, err := LoadQuizQuestions("quiz_questions.json")
+    if err != nil {
+        return fmt.Errorf("failed to load quiz questions: %v", err)
+    }
 
-	firstQuestion := questions[0].Question
-	options := questions[0].Options
+    // Get the first question
+    firstQuestion := questions[0].Question
 
-	card, err := models.CreateQuizCard(firstQuestion, options)
-	if err != nil {
-		return fmt.Errorf("failed to create quiz card: %v", err)
-	}
+    // Prepare options text
+    var options []string
+    for _, option := range questions[0].Options {
+        options = append(options, option.Text)
+    }
 
-	return SendMessageWithCard(roomId, card, accessToken)
+    // Create the quiz card
+    card, err := models.CreateQuizCard(firstQuestion, options)
+    if err != nil {
+        return fmt.Errorf("failed to create quiz card: %v", err)
+    }
+
+    // Send the message to Webex
+    return SendMessageWithCard(roomId, card, accessToken)
 }
 
-// ContinueQuiz moves the user to the next question or calculates the result if the quiz is finished
 func ContinueQuiz(roomId, accessToken, userAnswer string) error {
-	// Track the user's response and update session
-	err := TrackQuizResponse(roomId, userAnswer)
-	if err != nil {
-		return fmt.Errorf("failed to track user response: %v", err)
-	}
+    // Track the user's response and update the session
+    err := TrackQuizResponse(roomId, userAnswer)
+    if err != nil {
+        return fmt.Errorf("failed to track user response: %v", err)
+    }
 
-	// Load user session to check the current question number
-	session, err := GetUserQuizSession(roomId)
-	if err != nil {
-		return fmt.Errorf("failed to retrieve user session: %v", err)
-	}
+    // Load the user session to check the current question number
+    session, err := GetUserQuizSession(roomId)
+    if err != nil {
+        return fmt.Errorf("failed to retrieve user session: %v", err)
+    }
 
-	// Load quiz questions to check if we are at the last question
-	questions, err := LoadQuizQuestions("quiz_questions.json")
-	if err != nil {
-		return fmt.Errorf("failed to load quiz questions: %v", err)
-	}
+    // Load quiz questions
+    questions, err := LoadQuizQuestions("quiz_questions.json")
+    if err != nil {
+        return fmt.Errorf("failed to load quiz questions: %v", err)
+    }
 
-	// Check if the user has answered all the questions
-	if session.CurrentQNo >= len(questions) {
-		// All questions answered, calculate the result
-		result, err := CalculateQuizResult(session)
-		if err != nil {
-			return fmt.Errorf("failed to calculate quiz result: %v", err)
-		}
-		return SendMessageToWebex(roomId, result, accessToken)
-	}
+    // Check if all questions have been answered
+    if session.CurrentQNo >= len(questions) {
+        // Calculate the result
+        result, err := CalculateQuizResult(session)
+        if err != nil {
+            return fmt.Errorf("failed to calculate quiz result: %v", err)
+        }
+        return SendMessageToWebex(roomId, result, accessToken)
+    }
 
-	// Move to the next question
-	nextQuestion := questions[session.CurrentQNo]
-	card, err := models.CreateQuizCard(nextQuestion.Question, nextQuestion.Options)
-	if err != nil {
-		return fmt.Errorf("failed to create quiz card: %v", err)
-	}
+    // Get the next question
+    nextQuestion := questions[session.CurrentQNo].Question
 
-	// Send the next question card to Webex
-	return SendMessageWithCard(roomId, card, accessToken)
+    // Prepare options text
+    var options []string
+    for _, option := range questions[session.CurrentQNo].Options {
+        options = append(options, option.Text)
+    }
+
+    // Create the quiz card for the next question
+    card, err := models.CreateQuizCard(nextQuestion, options)
+    if err != nil {
+        return fmt.Errorf("failed to create quiz card: %v", err)
+    }
+
+    // Send the next question card to Webex
+    return SendMessageWithCard(roomId, card, accessToken)
 }
 
-// TrackQuizResponse updates the session based on the user's answer
 func TrackQuizResponse(roomId string, answer string) error {
-	// Load user session
-	session, err := GetUserQuizSession(roomId)
-	if err != nil {
-		return fmt.Errorf("failed to retrieve user session: %v", err)
-	}
+    // Load user session
+    session, err := GetUserQuizSession(roomId)
+    if err != nil {
+        return fmt.Errorf("failed to retrieve user session: %v", err)
+    }
 
-	// Load quiz questions from JSON file
-	questions, err := LoadQuizQuestions("quiz_questions.json")
-	if err != nil {
-		return fmt.Errorf("failed to load quiz questions: %v", err)
-	}
+    // Load quiz questions from JSON file
+    questions, err := LoadQuizQuestions("quiz_questions.json")
+    if err != nil {
+        return fmt.Errorf("failed to load quiz questions: %v", err)
+    }
 
-	// Get the current question number
-	currentQuestionNo := session.CurrentQNo
+    // Get the current question number
+    currentQuestionNo := session.CurrentQNo
 
-	// Make sure we are within the question range
-	if currentQuestionNo >= len(questions) {
-		return fmt.Errorf("no more questions available")
-	}
+    // Make sure we are within the question range
+    if currentQuestionNo >= len(questions) {
+        return fmt.Errorf("no more questions available")
+    }
 
-	// Get the current question and the associated scores for the selected answer
-	currentQuestion := questions[currentQuestionNo]
-	scoreMapping, exists := currentQuestion.Scores[answer]
-	if !exists {
-		return fmt.Errorf("invalid answer: %s", answer)
-	}
+    // Get the current question
+    currentQuestion := questions[currentQuestionNo]
 
-	// Increment the scores for the characters mapped to the selected answer
-	for _, character := range scoreMapping {
-		session.Scores[character]++
-	}
+    // Call UpdateScore to update the score based on the user's answer
+    err = session.UpdateScore(answer, currentQuestion)
+    if err != nil {
+        return err
+    }
 
-	// Increment the current question number
-	session.CurrentQNo++
-
-	// Save the updated session
-	return SaveUserQuizSession(roomId, session)
+    // Save the updated session
+    return SaveUserQuizSession(roomId, session)
 }
 
 // LoadCharacterDescriptions loads the character descriptions from the JSON file
@@ -332,7 +353,13 @@ func HandleErrorAndGuideUser(roomId string, accessToken string, errorMessage str
 }
 
 // HandleIncompleteQuizResponse prompts users if they have an incomplete quiz and asks them to continue or restart
-func HandleIncompleteQuizResponse(roomId, action, accessToken string) error {
+func HandleIncompleteQuizResponse(roomId string, data map[string]string, accessToken string) error {
+	// Retrieve the action from the data map
+	action, ok := data["action"]
+	if !ok {
+		return fmt.Errorf("no 'action' found in the data payload")
+	}
+
 	switch action {
 	case "ContinueQuiz":
 		// Continue the quiz from where they left off

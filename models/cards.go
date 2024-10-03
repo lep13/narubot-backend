@@ -3,10 +3,20 @@ package models
 import "fmt"
 
 // quiz question and its options
+// type QuizQuestion struct {
+//     Question string               `json:"question"`
+//     Options  []string             `json:"options"`
+//     Scores   map[string][]string   `json:"scores"`  // Maps option to characters
+// }
+type QuizOption struct {
+    Text      string `json:"text"`
+    Character string `json:"character"`
+    Score     int    `json:"score"`
+}
+
 type QuizQuestion struct {
-    Question string               `json:"question"`
-    Options  []string             `json:"options"`
-    Scores   map[string][]string   `json:"scores"`  // Maps option to characters
+    Question string       `json:"question"`
+    Options  []QuizOption `json:"options"`
 }
 
 // Card structure
@@ -37,11 +47,17 @@ type CardBody struct {
 }
 
 // CardAction structure
+// type CardAction struct {
+// 	Type  string            `json:"type"`
+// 	Title string            `json:"title"`
+// 	Value string            `json:"value"`
+// 	Action string           `json:"action"` // for action handling
+// }
+// CardAction structure
 type CardAction struct {
-	Type  string            `json:"type"`
-	Title string            `json:"title"`
-	Value string            `json:"value"`
-	Action string           `json:"action"` // for action handling
+	Type  string            `json:"type"`  // Action.Submit etc.
+	Title string            `json:"title"` // Label displayed on the button
+	Data  map[string]string `json:"data"`  // Data payload, stores the action identifier
 }
 
 // CreateGreetingCard generates a Webex adaptive card for the greeting with clickable options
@@ -60,12 +76,16 @@ func CreateGreetingCard() (map[string]interface{}, error) {
 			map[string]interface{}{
 				"type":  "Action.Submit",
 				"title": "Ask me a question about Naruto",
-				"data":  map[string]string{"action": "AskQuestion"}, // action identifier
+				"data": map[string]string{  // Adjusting to ensure data contains the custom action
+					"action": "AskQuestion",
+				}, 
 			},
 			map[string]interface{}{
 				"type":  "Action.Submit",
 				"title": "Take a personality quiz",
-				"data":  map[string]string{"action": "StartQuiz"}, // action identifier
+				"data": map[string]string{
+					"action": "StartQuiz",
+				},
 			},
 		},
 		"$schema":  "http://adaptivecards.io/schemas/adaptive-card.json",
@@ -78,6 +98,11 @@ func CreateGreetingCard() (map[string]interface{}, error) {
 func CreateQuizCard(question string, options []string) (map[string]interface{}, error) {
 	if len(options) == 0 {
 		return nil, fmt.Errorf("no options provided for the quiz question")
+	}
+	
+	choices, err := convertToChoices(options)  // Handle the second return value (error)
+	if err != nil {
+		return nil, err  // Return error if converting choices fails
 	}
 
 	card := map[string]interface{}{
@@ -93,7 +118,7 @@ func CreateQuizCard(question string, options []string) (map[string]interface{}, 
 				"type":  "Input.ChoiceSet",
 				"id":    "quizAnswer",
 				"style": "expanded",
-				"choices": convertToChoices(options),
+				"choices": choices,  // Use the converted choices
 			},
 		},
 		"actions": []interface{}{
@@ -109,7 +134,11 @@ func CreateQuizCard(question string, options []string) (map[string]interface{}, 
 }
 
 // Helper function to convert string options to Webex adaptive card choices
-func convertToChoices(options []string) []map[string]interface{} {
+func convertToChoices(options []string) ([]map[string]interface{}, error) {
+	if len(options) == 0 {
+		return nil, fmt.Errorf("no options provided for quiz choices")
+	}
+
 	choices := []map[string]interface{}{}
 	for _, option := range options {
 		choices = append(choices, map[string]interface{}{
@@ -117,5 +146,5 @@ func convertToChoices(options []string) []map[string]interface{} {
 			"value": option,
 		})
 	}
-	return choices
+	return choices, nil
 }

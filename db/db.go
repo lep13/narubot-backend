@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"encoding/json"
-	"narubot-backend/models" // Import the models package to use Config
-
+	"github.com/lep13/narubot-backend/models" 
+	
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"

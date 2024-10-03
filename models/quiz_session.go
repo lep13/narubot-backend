@@ -1,5 +1,7 @@
 package models
 
+import "fmt"
+
 type QuizSession struct {
 	UserID      string         `bson:"user_id"`
 	CurrentQNo  int            `bson:"current_q_no"`
@@ -8,28 +10,36 @@ type QuizSession struct {
 	LastUpdated int64          `bson:"last_updated"`
 }
 
-type CharacterInfo struct{
+type CharacterInfo struct {
 	Description string `json:"description"`
-    Image       string `json:"image"`
+	Image       string `json:"image"`
 }
 
 // UpdateScore updates the score based on the selected answer.
-func (qs *QuizSession) UpdateScore(answer string) {
-	// You can map answers to specific character scores here.
-	// For example:
-	answerMap := map[string]string{
-		"Talk it out diplomatically": "Sakura",
-		"Charge in headfirst!":       "Naruto",
-		"Stay calm and think":        "Kakashi",
-		"Manipulate events":          "Itachi",
-	}
+func (qs *QuizSession) UpdateScore(answer string, currentQuestion QuizQuestion) error {
+    // Find the matching option based on the user's answer
+    var selectedOption *QuizOption
+    for _, option := range currentQuestion.Options {
+        if option.Text == answer {
+            selectedOption = &option
+            break
+        }
+    }
 
-	character := answerMap[answer]
-	if _, exists := qs.Scores[character]; exists {
-		qs.Scores[character] += 1
-	} else {
-		qs.Scores[character] = 1
-	}
+    if selectedOption == nil {
+        return fmt.Errorf("invalid answer: %s", answer)
+    }
 
-	qs.CurrentQNo += 1
+    // Increment the score for the selected character
+    if _, exists := qs.Scores[selectedOption.Character]; exists {
+        qs.Scores[selectedOption.Character] += selectedOption.Score
+    } else {
+        qs.Scores[selectedOption.Character] = selectedOption.Score
+    }
+
+    // Proceed to the next question
+    qs.CurrentQNo++
+
+    return nil
 }
+

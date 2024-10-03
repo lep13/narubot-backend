@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"log"
 	"github.com/lep13/narubot-backend/models"
 )
 
@@ -70,14 +71,26 @@ func SendGreetingWithOptions(roomId, accessToken string) error {
 	return nil
 }
 
-// ParseCardAction extracts action data from card submission
-func ParseCardAction(messageText string) (*models.CardAction, error) {
-	var actionData models.CardAction
-	err := json.Unmarshal([]byte(messageText), &actionData)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse card action: %v", err)
+// ParseCardActionUsingAttachment extracts card actions from Webex's "attachmentActions" payload
+func ParseCardActionUsingAttachment(payload map[string]interface{}) (*models.CardAction, error) {
+	// Access the "inputs" field from the attachment actions
+	actionData, ok := payload["inputs"].(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("no 'inputs' field found in the payload")
 	}
-	return &actionData, nil
+
+	// Extract the value associated with "action" or other data keys
+	actionValue, exists := actionData["action"]
+	if !exists {
+		return nil, fmt.Errorf("no 'action' found in the card action inputs")
+	}
+
+	// Returning a CardAction struct with the action identifier in the Data map
+	return &models.CardAction{
+		Data: map[string]string{
+			"action": actionValue.(string),
+		},
+	}, nil
 }
 
 // GetMessageContent fetches the message content using the Webex message ID
@@ -112,9 +125,10 @@ func GetMessageContent(messageId, accessToken string) (string, error) {
 		return "", fmt.Errorf("failed to unmarshal response: %v", err)
 	}
 
-	// Extract the "text" field
+	// Extract the "text" field with logging in case it's missing
 	text, ok := messageData["text"].(string)
 	if !ok {
+		log.Printf("Warning: 'text' field is missing from Webex message data: %+v", messageData)
 		return "", fmt.Errorf("no 'text' field found in the message response")
 	}
 
