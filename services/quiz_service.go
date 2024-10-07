@@ -154,6 +154,21 @@ func sendQuizQuestion(userID string, session *models.QuizSession, questions []mo
 	session.CurrentQNo++
 	return SaveUserQuizSession(userID, session)
 }
+// sendQuizQuestion sends the current question as a simple card framing text
+// func sendQuizQuestion(userID string, session *models.QuizSession, questions []models.QuizQuestion, accessToken string) error {
+// 	if session.CurrentQNo >= len(questions) {
+// 		return FinalizeQuizAndResetSession(userID, session, accessToken)
+// 	}
+
+// 	currentQuestion := questions[session.CurrentQNo]
+// 	questionText := fmt.Sprintf("Question %d: %s\n", session.CurrentQNo+1, currentQuestion.Question)
+// 	for i, option := range currentQuestion.Options {
+// 		questionText += fmt.Sprintf("%d. %s\n", i+1, option.Text)
+// 	}
+
+// 	card := models.CreateTextCard(questionText)
+// 	return SendMessageWithCard(userID, card, accessToken)
+// }
 
 // StartQuiz initializes and sends the first quiz card
 func StartQuiz(userID, accessToken string) error {
@@ -214,25 +229,44 @@ func HandleQuit(userID string, accessToken string) error {
 	return ResetQuizSession(userID)
 }
 
+// FinalizeQuizAndResetSession calculates the quiz result, sends it as an image card, and resets the quiz session
 func FinalizeQuizAndResetSession(userID string, session *models.QuizSession, accessToken string) error {
+	// Calculate the result
 	character, err := CalculateQuizResult(session)
 	if err != nil {
 		return fmt.Errorf("failed to calculate quiz result: %v", err)
 	}
 
+	// Load character descriptions
 	descriptions, err := LoadCharacterDescriptions("character_description.json")
 	if err != nil {
 		return fmt.Errorf("failed to load character descriptions: %v", err)
 	}
 
+	// Get the character information
 	characterInfo, exists := descriptions[character]
 	if !exists {
 		characterInfo.Description = "Description not found."
+		characterInfo.Image = ""
 	}
 
-	finalMessage := fmt.Sprintf("You are most like %s! %s\n\n![Image](%s)", character, characterInfo.Description, characterInfo.Image)
-	SendMessageToWebex(userID, finalMessage, accessToken)
+	// Create and send the result card with image and description
+	if characterInfo.Image != "" {
+		card := models.CreateImageCard(characterInfo.Image, fmt.Sprintf("You are most like %s!", character), characterInfo.Description)
+		err := SendMessageWithCard(userID, card, accessToken)
+		if err != nil {
+			return fmt.Errorf("failed to send image card: %v", err)
+		}
+	} else {
+		// Send only text if no image is found for the character
+		finalMessage := fmt.Sprintf("You are most like %s! %s", character, characterInfo.Description)
+		err := SendMessageToWebex(userID, finalMessage, accessToken)
+		if err != nil {
+			return fmt.Errorf("failed to send text message: %v", err)
+		}
+	}
 
+	// Reset the quiz session after the result has been presented
 	return ResetQuizSession(userID)
 }
 
