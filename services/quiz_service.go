@@ -179,11 +179,16 @@ func LoadQuizQuestions(filename string) ([]models.QuizQuestion, error) {
 }
 
 func StartQuiz(roomId, accessToken string) error {
+    fmt.Println("Starting quiz for roomId:", roomId)  // Log when starting
+
     // Load quiz questions
     questions, err := LoadQuizQuestions("quiz_questions.json")
     if err != nil {
+        fmt.Println("Error loading quiz questions:", err)  // Log error
         return fmt.Errorf("failed to load quiz questions: %v", err)
     }
+
+    fmt.Println("Loaded quiz questions successfully!")  // Log success
 
     // Get the first question
     firstQuestion := questions[0].Question
@@ -197,14 +202,26 @@ func StartQuiz(roomId, accessToken string) error {
     // Create the quiz card
     card, err := models.CreateQuizCard(firstQuestion, options)
     if err != nil {
+        fmt.Println("Error creating quiz card:", err)  // Log error
         return fmt.Errorf("failed to create quiz card: %v", err)
     }
 
+    fmt.Println("Created quiz card successfully!")  // Log success
+
     // Send the message to Webex
-    return SendMessageWithCard(roomId, card, accessToken)
+    err = SendMessageWithCard(roomId, card, accessToken)
+    if err != nil {
+        fmt.Println("Error sending quiz card:", err)  // Log error
+        return fmt.Errorf("failed to send quiz card: %v", err)
+    }
+
+    fmt.Println("Quiz card sent successfully!")  // Log success
+    return nil
 }
 
 func ContinueQuiz(roomId, accessToken, userAnswer string) error {
+    fmt.Println("Continuing quiz for roomId:", roomId, "with answer:", userAnswer) // Log statement
+
     // Track the user's response and update the session
     err := TrackQuizResponse(roomId, userAnswer)
     if err != nil {
@@ -230,7 +247,15 @@ func ContinueQuiz(roomId, accessToken, userAnswer string) error {
         if err != nil {
             return fmt.Errorf("failed to calculate quiz result: %v", err)
         }
-        return SendMessageToWebex(roomId, result, accessToken)
+
+        // Send result to Webex
+        err = SendMessageToWebex(roomId, result, accessToken)
+        if err != nil {
+            return fmt.Errorf("failed to send quiz result: %v", err)
+        }
+        
+        fmt.Println("Quiz finished for roomId:", roomId) // Log statement
+        return nil
     }
 
     // Get the next question
@@ -249,7 +274,13 @@ func ContinueQuiz(roomId, accessToken, userAnswer string) error {
     }
 
     // Send the next question card to Webex
-    return SendMessageWithCard(roomId, card, accessToken)
+    err = SendMessageWithCard(roomId, card, accessToken)
+    if err != nil {
+        return fmt.Errorf("failed to send next quiz card: %v", err)
+    }
+
+    fmt.Println("Next quiz question sent for roomId:", roomId) // Log statement
+    return nil
 }
 
 func TrackQuizResponse(roomId string, answer string) error {

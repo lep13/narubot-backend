@@ -5,38 +5,87 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"net/http"
 	"log"
+	"net/http"
+
 	"github.com/lep13/narubot-backend/models"
 )
+
+// // SendCardToRoom sends a card message to the specified Webex room
+// func SendCardToRoom(roomId string, card map[string]interface{}, accessToken string) error {
+//     cardData := map[string]interface{}{
+//         "roomId": roomId,
+//         "markdown": "Testing Webex Card",
+//         "attachments": []map[string]interface{}{card},
+//     }
+
+//     jsonData, err := json.Marshal(cardData)
+//     if err != nil {
+//         return fmt.Errorf("failed to marshal card: %v", err)
+//     }
+
+//     req, err := http.NewRequest("POST", "https://webexapis.com/v1/messages", bytes.NewBuffer(jsonData))
+//     if err != nil {
+//         return fmt.Errorf("failed to create request: %v", err)
+//     }
+
+//     req.Header.Set("Content-Type", "application/json")
+//     req.Header.Set("Authorization", "Bearer "+accessToken)
+
+//     client := &http.Client{}
+//     resp, err := client.Do(req)
+//     if err != nil {
+//         return fmt.Errorf("failed to send card: %v", err)
+//     }
+//     defer resp.Body.Close()
+
+//     if resp.StatusCode != http.StatusOK {
+//         return fmt.Errorf("non-OK HTTP status: %v", resp.Status)
+//     }
+
+//     return nil
+// }
 
 // SendGreetingWithOptions sends a greeting with interactive options
 func SendGreetingWithOptions(roomId, accessToken string) error {
 	card := map[string]interface{}{
-		"roomId": roomId,
+		"roomId":   roomId,
 		"markdown": "Narubot is here, dattabayo!",
 		"attachments": []map[string]interface{}{
 			{
 				"contentType": "application/vnd.microsoft.card.adaptive",
 				"content": map[string]interface{}{
 					"type":    "AdaptiveCard",
-					"version": "1.0",
+					"version": "1.3",
+					"$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
 					"body": []map[string]interface{}{
 						{
-							"type": "TextBlock",
-							"text": "Narubot is here, dattabayo! What do you want to do?",
+							"type":   "TextBlock",
+							"text":   "Narubot is here, dattabayo! What would you like to do?",
+							"weight": "Bolder",
+							"size":   "Medium",
 						},
 					},
 					"actions": []map[string]interface{}{
 						{
 							"type":  "Action.Submit",
 							"title": "Ask me a question about Naruto",
-							"data":  map[string]string{"action": "AskQuestion"},
+							"id":    "ask_question_action",
+							"data": map[string]interface{}{
+								"inputs": map[string]string{
+									"action": "AskQuestion",
+								},
+							},
 						},
 						{
 							"type":  "Action.Submit",
 							"title": "Take a personality quiz",
-							"data":  map[string]string{"action": "StartQuiz"},
+							"id":    "start_quiz_action",
+							"data": map[string]interface{}{
+								"inputs": map[string]string{
+									"action": "StartQuiz",
+								},
+							},
 						},
 					},
 				},
@@ -73,24 +122,32 @@ func SendGreetingWithOptions(roomId, accessToken string) error {
 
 // ParseCardActionUsingAttachment extracts card actions from Webex's "attachmentActions" payload
 func ParseCardActionUsingAttachment(payload map[string]interface{}) (*models.CardAction, error) {
-	// Access the "inputs" field from the attachment actions
-	actionData, ok := payload["inputs"].(map[string]interface{})
-	if !ok {
-		return nil, fmt.Errorf("no 'inputs' field found in the payload")
-	}
+    // Check for data field in payload
+    data, ok := payload["data"].(map[string]interface{})
+    if !ok {
+        return nil, fmt.Errorf("no 'data' field found in the payload")
+    }
 
-	// Extract the value associated with "action" or other data keys
-	actionValue, exists := actionData["action"]
-	if !exists {
-		return nil, fmt.Errorf("no 'action' found in the card action inputs")
-	}
+    // Check for inputs within data
+    inputs, ok := data["inputs"].(map[string]interface{})
+    if !ok {
+        return nil, fmt.Errorf("no 'inputs' field found in 'data'")
+    }
 
-	// Returning a CardAction struct with the action identifier in the Data map
-	return &models.CardAction{
-		Data: map[string]string{
-			"action": actionValue.(string),
-		},
-	}, nil
+	log.Printf("Data Content: %+v\n", data)
+	log.Printf("Inputs Content: %+v\n", inputs)
+
+    // Check for action within inputs
+    action, actionOk := inputs["action"].(string)
+    if !actionOk {
+        return nil, fmt.Errorf("no 'action' field found in 'inputs'")
+    }
+
+    return &models.CardAction{
+        Data: map[string]string{
+            "action": action,
+        },
+    }, nil
 }
 
 // GetMessageContent fetches the message content using the Webex message ID
@@ -142,16 +199,29 @@ func SendMessageToWebex(roomId, message, accessToken string) error {
 		"roomId": roomId,
 		"text":   message,
 	}
-	jsonData, _ := json.Marshal(messageData)
+	jsonData, err := json.Marshal(messageData)
+	if err != nil {
+		return fmt.Errorf("failed to marshal message data: %v", err)
+	}
 
 	req, err := http.NewRequest("POST", "https://webexapis.com/v1/messages", bytes.NewBuffer(jsonData))
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create request: %v", err)
 	}
 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 
-	_, err = client.Do(req)
-	return err
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to send message to Webex: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("non-OK HTTP status: %s, response: %s", resp.Status, body)
+	}
+
+	return nil
 }
