@@ -2,19 +2,19 @@ package db
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"time"
 
-	"encoding/json"
-	"github.com/lep13/narubot-backend/models" 
-	
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
+	"github.com/lep13/narubot-backend/models"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
+
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
 )
 
 // MongoClientInterface defines the interface for MongoDB client methods used in our code.
@@ -60,12 +60,53 @@ var GetCollectionFunc CollectionGetterFunc = defaultGetCollection
 
 // CollectionInterface defines the methods to be mocked for MongoDB collection.
 type CollectionInterface interface {
+	InsertOne(ctx context.Context, document interface{}) (*mongo.InsertOneResult, error)
+	FindOne(ctx context.Context, filter interface{}) SingleResultInterface
 	UpdateOne(ctx context.Context, filter interface{}, update interface{}, opts ...*options.UpdateOptions) (*mongo.UpdateResult, error)
+	DeleteOne(ctx context.Context, filter interface{}) (*mongo.DeleteResult, error)
+}
+
+// MongoCollectionWrapper wraps the actual MongoDB collection to conform to our interface.
+type MongoCollectionWrapper struct {
+	Collection *mongo.Collection
+}
+
+func (c *MongoCollectionWrapper) InsertOne(ctx context.Context, document interface{}) (*mongo.InsertOneResult, error) {
+	return c.Collection.InsertOne(ctx, document)
+}
+
+func (c *MongoCollectionWrapper) FindOne(ctx context.Context, filter interface{}) SingleResultInterface {
+	return c.Collection.FindOne(ctx, filter)
+}
+
+func (c *MongoCollectionWrapper) UpdateOne(ctx context.Context, filter interface{}, update interface{}, opts ...*options.UpdateOptions) (*mongo.UpdateResult, error) {
+	return c.Collection.UpdateOne(ctx, filter, update, opts...)
+}
+
+func (c *MongoCollectionWrapper) DeleteOne(ctx context.Context, filter interface{}) (*mongo.DeleteResult, error) {
+	return c.Collection.DeleteOne(ctx, filter)
+}
+
+// SingleResultInterface defines methods for decoding MongoDB single results.
+type SingleResultInterface interface {
+	Decode(v interface{}) error
+}
+
+// MongoSingleResultWrapper wraps the actual MongoDB single result.
+type MongoSingleResultWrapper struct {
+	SingleResult *mongo.SingleResult
+}
+
+func (r *MongoSingleResultWrapper) Decode(v interface{}) error {
+	return r.SingleResult.Decode(v)
 }
 
 // defaultGetCollection returns the default collection for chatbot data.
 func defaultGetCollection() CollectionInterface {
-	return MongoClient.Database("narubot").Collection("chatbot")
+    if MongoClient == nil {
+        log.Fatalf("MongoClient is nil. Make sure InitializeMongoDB is called first.")
+    }
+    return &MongoCollectionWrapper{Collection: MongoClient.Database("narubot").Collection("chatbot")}
 }
 
 // GetCollection returns a collection from the MongoDB database.
@@ -75,24 +116,24 @@ func GetCollection() CollectionInterface {
 
 // InitializeMongoDB initializes the MongoDB client connection using the MongoDB URI from secrets.
 func InitializeMongoDB(config *models.Config) error {
-	var err error
-	MongoClient, err = DefaultMongoConnectFunc(context.Background(), config.MongoURI)
-	if err != nil {
-		log.Printf("Failed to connect to MongoDB: %v", err)
-		return err
-	}
+    var err error
+    MongoClient, err = DefaultMongoConnectFunc(context.Background(), config.MongoURI)
+    if err != nil {
+        log.Printf("Failed to connect to MongoDB: %v", err)
+        return err
+    }
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+    ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+    defer cancel()
 
-	err = MongoClient.Ping(ctx, readpref.Primary())
-	if err != nil {
-		log.Printf("Failed to ping MongoDB: %v", err)
-		return err
-	}
+    err = MongoClient.Ping(ctx, readpref.Primary())
+    if err != nil {
+        log.Printf("Failed to ping MongoDB: %v", err)
+        return err
+    }
 
-	log.Println("Connected to MongoDB successfully")
-	return nil
+    log.Println("Connected to MongoDB successfully")
+    return nil
 }
 
 // SecretsManagerInterface defines the interface for Secrets Manager client methods used in our code.

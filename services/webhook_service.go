@@ -11,41 +11,6 @@ import (
 	"github.com/lep13/narubot-backend/models"
 )
 
-// // SendCardToRoom sends a card message to the specified Webex room
-// func SendCardToRoom(roomId string, card map[string]interface{}, accessToken string) error {
-//     cardData := map[string]interface{}{
-//         "roomId": roomId,
-//         "markdown": "Testing Webex Card",
-//         "attachments": []map[string]interface{}{card},
-//     }
-
-//     jsonData, err := json.Marshal(cardData)
-//     if err != nil {
-//         return fmt.Errorf("failed to marshal card: %v", err)
-//     }
-
-//     req, err := http.NewRequest("POST", "https://webexapis.com/v1/messages", bytes.NewBuffer(jsonData))
-//     if err != nil {
-//         return fmt.Errorf("failed to create request: %v", err)
-//     }
-
-//     req.Header.Set("Content-Type", "application/json")
-//     req.Header.Set("Authorization", "Bearer "+accessToken)
-
-//     client := &http.Client{}
-//     resp, err := client.Do(req)
-//     if err != nil {
-//         return fmt.Errorf("failed to send card: %v", err)
-//     }
-//     defer resp.Body.Close()
-
-//     if resp.StatusCode != http.StatusOK {
-//         return fmt.Errorf("non-OK HTTP status: %v", resp.Status)
-//     }
-
-//     return nil
-// }
-
 // SendGreetingWithOptions sends a greeting with interactive options
 func SendGreetingWithOptions(roomId, accessToken string) error {
 	card := map[string]interface{}{
