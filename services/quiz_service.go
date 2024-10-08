@@ -218,9 +218,9 @@ func ContinueQuiz(userID string, userAnswer string, accessToken string) error {
 	return sendQuizQuestion(userID, session, questions, accessToken)
 }
 
-// HandleQuit allows the user to quit the quiz session.
+// to quit the quiz session.
 func HandleQuit(userID string, accessToken string) error {
-	quitMessage := "You have quit the quiz session. If you'd like to start again, just say 'start'."
+	quitMessage := "You have quit the quiz session. Feel free to start over by saying 'quiz' anytime!"
 	err := SendMessageToWebex(userID, quitMessage, accessToken)
 	if err != nil {
 		return fmt.Errorf("failed to send quit message: %v", err)

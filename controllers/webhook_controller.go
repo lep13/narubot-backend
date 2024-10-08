@@ -61,14 +61,14 @@ func HandleWebhook(c *gin.Context) {
 
 		switch {
 		case lowerMessage == "quit":
-			// Quit the quiz if in session
+			// quit the quiz if in session
 			if sessionErr == nil && !session.IsCompleted {
 				err := services.HandleQuit(roomId, cfg.WebexAccessToken)
 				if err != nil {
 					c.JSON(500, gin.H{"status": "failed to quit quiz"})
 					return
 				}
-				services.SendMessageToWebex(roomId, "You have exited the quiz. Feel free to start over by saying 'quiz' anytime!", cfg.WebexAccessToken)
+				// services.SendMessageToWebex(roomId, "You have exited the quiz. Feel free to start over by saying 'quiz' anytime!", cfg.WebexAccessToken)
 				c.JSON(200, gin.H{"status": "quiz quit"})
 			} else {
 				services.SendMessageToWebex(roomId, "No active quiz to quit. Say 'quiz' to start one!", cfg.WebexAccessToken)
@@ -82,6 +82,7 @@ func HandleWebhook(c *gin.Context) {
 			// c.JSON(200, gin.H{"status": "quiz instructions sent"})
 			// return
 			err := sendQuizInstructionsCard(roomId, cfg.WebexAccessToken)
+			// sendQuizInstructionsCard(roomId, cfg.WebexAccessToken)
 			if err != nil {
 				c.JSON(500, gin.H{"status": "failed to send quiz instructions"})
 				return
@@ -160,7 +161,7 @@ func isGreeting(message string) bool {
 }
 
 func sendQuizInstructionsCard(userID, accessToken string) error {
-	instructionsText := "I’ll ask you 10 questions. Reply with the number of your choice, and I’ll reveal which Naruto character you are! Say 'start' when you’re ready. You may say 'quit' anytime you want to exit the quiz."
+	instructionsText := "I'll ask you 10 questions. Reply with the number of your choice, and I'll reveal which Naruto character you are! Say 'start' when you're ready. You may say 'quit' anytime you want to exit the quiz."
 	card := models.CreateTextCard(instructionsText)
 	return services.SendMessageWithCard(userID, card, accessToken)
 }
@@ -170,6 +171,28 @@ func sendGreetingCard(userID, accessToken string) error {
 	card := models.CreateTextCard(greetingText)
 	return services.SendMessageWithCard(userID, card, accessToken)
 }
+
+// func sendGreetingCard(roomId, accessToken string) {
+//     greetingMessage := "Narubot is here, dattabayo! Let's chat! Or if you want to take a quiz about Naruto, say 'quiz'!"
+//     greetingHighlights := map[string]bool{
+//         "Let's chat!": true,
+//         "quiz":        true,
+//     }
+
+//     greetingCard := models.CreateTextCardWithHighlights(greetingMessage, greetingHighlights)
+//     services.SendMessageWithCard(roomId, greetingCard, accessToken)
+// }
+
+// func sendQuizInstructionsCard(roomId, accessToken string) {
+//     quizInstructions := "I'll ask you 10 questions. Reply with the number of your choice, and I'll reveal which Naruto character you are! Say 'start' when you’re ready. You may say 'quit' anytime you want to exit the quiz."
+//     quizHighlights := map[string]bool{
+//         "start": true,
+//         "quit":  true,
+//     }
+
+//     quizCard := models.CreateTextCardWithHighlights(quizInstructions, quizHighlights)
+//     services.SendMessageWithCard(roomId, quizCard, accessToken)
+// }
 
 // helper function to check if a string is numeric and within the quiz answer range
 func isNumeric(s string) bool {
