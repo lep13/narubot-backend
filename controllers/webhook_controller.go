@@ -58,17 +58,16 @@ func HandleWebhook(c *gin.Context) {
 
 		lowerMessage := strings.ToLower(messageText)
 		session, sessionErr := services.GetUserQuizSession(roomId)
+		isQuizActive := (sessionErr == nil && session != nil && !session.IsCompleted)
 
 		switch {
 		case lowerMessage == "quit":
-			// quit the quiz if in session
-			if sessionErr == nil && !session.IsCompleted {
+			if isQuizActive {
 				err := services.HandleQuit(roomId, cfg.WebexAccessToken)
 				if err != nil {
 					c.JSON(500, gin.H{"status": "failed to quit quiz"})
 					return
 				}
-				// services.SendMessageToWebex(roomId, "You have exited the quiz. Feel free to start over by saying 'quiz' anytime!", cfg.WebexAccessToken)
 				c.JSON(200, gin.H{"status": "quiz quit"})
 			} else {
 				services.SendMessageToWebex(roomId, "No active quiz to quit. Say 'quiz' to start one!", cfg.WebexAccessToken)
@@ -77,20 +76,15 @@ func HandleWebhook(c *gin.Context) {
 			return
 
 		case lowerMessage == "quiz":
-			// // Send quiz instructions
-			// services.SendMessageToWebex(roomId, "I’ll ask you 10 questions. Reply with the number of your choice, and I’ll reveal which Naruto character you are! Say 'start' when you’re ready. You may say 'quit' anytime you want to exit the quiz.", cfg.WebexAccessToken)
-			// c.JSON(200, gin.H{"status": "quiz instructions sent"})
-			// return
 			err := sendQuizInstructionsCard(roomId, cfg.WebexAccessToken)
-			// sendQuizInstructionsCard(roomId, cfg.WebexAccessToken)
 			if err != nil {
 				c.JSON(500, gin.H{"status": "failed to send quiz instructions"})
 				return
 			}
 			c.JSON(200, gin.H{"status": "quiz instructions sent"})
+			return
 
 		case lowerMessage == "start":
-			// Start the quiz
 			err := services.StartQuiz(roomId, cfg.WebexAccessToken)
 			if err != nil {
 				services.SendMessageToWebex(roomId, "I couldn't start the quiz. Please try again.", cfg.WebexAccessToken)
@@ -101,8 +95,7 @@ func HandleWebhook(c *gin.Context) {
 			return
 
 		case isNumeric(lowerMessage):
-			// Continue the quiz if in session
-			if sessionErr == nil && !session.IsCompleted {
+			if isQuizActive {
 				err := services.ContinueQuiz(roomId, lowerMessage, cfg.WebexAccessToken)
 				if err != nil {
 					services.SendMessageToWebex(roomId, "There was an issue with your answer. Please reply with '1', '2', '3', or '4', or type 'quit' to exit.", cfg.WebexAccessToken)
@@ -111,30 +104,28 @@ func HandleWebhook(c *gin.Context) {
 				}
 				c.JSON(200, gin.H{"status": "quiz continued"})
 				return
+			} else {
+				services.SendMessageToWebex(roomId, "No active quiz. Say 'quiz' to start one!", cfg.WebexAccessToken)
+				c.JSON(200, gin.H{"status": "no active quiz"})
+				return
 			}
-			services.SendMessageToWebex(roomId, "No active quiz. Say 'quiz' to start one!", cfg.WebexAccessToken)
-			c.JSON(200, gin.H{"status": "no active quiz"})
-			return
 
 		case isGreeting(lowerMessage):
-			// Respond to greeting
-			// services.SendMessageToWebex(roomId, "Narubot is here, dattabayo! Let's chat! Or if you want to take a quiz about Naruto, say 'quiz'!", cfg.WebexAccessToken)
-			// c.JSON(200, gin.H{"status": "greeting sent"})
-			// return
+			// Send a greeting card for greeting messages
 			err := sendGreetingCard(roomId, cfg.WebexAccessToken)
 			if err != nil {
 				c.JSON(500, gin.H{"status": "failed to send greeting card"})
 				return
 			}
 			c.JSON(200, gin.H{"status": "greeting sent"})
+			return
 
 		default:
-			// If quiz is ongoing, send specific instructions
-			if sessionErr == nil && !session.IsCompleted {
+			// General response if no active quiz: Use Vertex AI
+			if isQuizActive {
 				services.SendMessageToWebex(roomId, "Please respond with '1', '2', '3', or '4' for your answer, or type 'quit' to exit the quiz.", cfg.WebexAccessToken)
 				c.JSON(200, gin.H{"status": "invalid input during quiz"})
 			} else {
-				// If no quiz is active, use Vertex AI for other inputs
 				vertexResponse, err := services.GenerateVertexAIResponse(messageText, cfg)
 				if err != nil {
 					services.SendMessageToWebex(roomId, "I'm sorry, I couldn't generate a response.", cfg.WebexAccessToken)
@@ -147,6 +138,76 @@ func HandleWebhook(c *gin.Context) {
 		}
 	}
 }
+// 	// Handle regular messages
+// 	if resource == "messages" && emailOk && roomOk && messageOk {
+// 		messageText, err := services.GetMessageContent(messageId, cfg.WebexAccessToken)
+// 		if err != nil {
+// 			services.SendMessageToWebex(roomId, "I'm sorry, I couldn't retrieve the message.", cfg.WebexAccessToken)
+// 			c.JSON(500, gin.H{"status": "failed to get message content"})
+// 			return
+// 		}
+
+// 		lowerMessage := strings.ToLower(messageText)
+// 		session, sessionErr := services.GetUserQuizSession(roomId)
+
+// 		switch {
+// 		case lowerMessage == "quit":
+// 			// quit the quiz if in session
+// 			if sessionErr == nil && !session.IsCompleted {
+// 				err := services.HandleQuit(roomId, cfg.WebexAccessToken)
+// 				if err != nil {
+// 					c.JSON(500, gin.H{"status": "failed to quit quiz"})
+// 					return
+// 				}
+// 				// services.SendMessageToWebex(roomId, "You have exited the quiz. Feel free to start over by saying 'quiz' anytime!", cfg.WebexAccessToken)
+// 				c.JSON(200, gin.H{"status": "quiz quit"})
+// 			} else {
+// 				services.SendMessageToWebex(roomId, "No active quiz to quit. Say 'quiz' to start one!", cfg.WebexAccessToken)
+// 				c.JSON(200, gin.H{"status": "no quiz to quit"})
+// 			}
+// 			return
+
+// 		case lowerMessage == "quiz":
+// 			// // Send quiz instructions
+// 			// services.SendMessageToWebex(roomId, "I’ll ask you 10 questions. Reply with the number of your choice, and I’ll reveal which Naruto character you are! Say 'start' when you’re ready. You may say 'quit' anytime you want to exit the quiz.", cfg.WebexAccessToken)
+// 			// c.JSON(200, gin.H{"status": "quiz instructions sent"})
+// 			// return
+// 			err := sendQuizInstructionsCard(roomId, cfg.WebexAccessToken)
+// 			// sendQuizInstructionsCard(roomId, cfg.WebexAccessToken)
+// 			if err != nil {
+// 				c.JSON(500, gin.H{"status": "failed to send quiz instructions"})
+// 				return
+// 			}
+// 			c.JSON(200, gin.H{"status": "quiz instructions sent"})
+
+// 		case lowerMessage == "start":
+// 			// Start the quiz
+// 			err := services.StartQuiz(roomId, cfg.WebexAccessToken)
+// 			if err != nil {
+// 				services.SendMessageToWebex(roomId, "I couldn't start the quiz. Please try again.", cfg.WebexAccessToken)
+// 				c.JSON(500, gin.H{"status": "failed to start quiz"})
+// 				return
+// 			}
+// 			c.JSON(200, gin.H{"status": "quiz started"})
+// 			return
+
+// 		case isNumeric(lowerMessage):
+// 			// Continue the quiz if in session
+// 			if sessionErr == nil && !session.IsCompleted {
+// 				err := services.ContinueQuiz(roomId, lowerMessage, cfg.WebexAccessToken)
+// 				if err != nil {
+// 					services.SendMessageToWebex(roomId, "There was an issue with your answer. Please reply with '1', '2', '3', or '4', or type 'quit' to exit.", cfg.WebexAccessToken)
+// 					c.JSON(500, gin.H{"status": "failed to continue quiz"})
+// 					return
+// 				}
+// 				c.JSON(200, gin.H{"status": "quiz continued"})
+// 				return
+// 			}
+// 			services.SendMessageToWebex(roomId, "No active quiz. Say 'quiz' to start one!", cfg.WebexAccessToken)
+// 			c.JSON(200, gin.H{"status": "no active quiz"})
+// 			return
+
+
 
 // Helper function to check if the message is a greeting
 func isGreeting(message string) bool {

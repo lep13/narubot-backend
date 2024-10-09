@@ -39,16 +39,17 @@ func CreateQuizSession(userID string) (*models.QuizSession, error) {
 }
 
 // GetUserQuizSession retrieves the current session for the user
-func GetUserQuizSession(userID string) (*models.QuizSession, error) {
-	collection := db.GetCollection()
-	filter := bson.M{"user_id": userID}
 
-	var session models.QuizSession
-	err := collection.FindOne(context.Background(), filter).Decode(&session)
-	if err == mongo.ErrNoDocuments {
-		return CreateQuizSession(userID)
-	}
-	return &session, err
+func GetUserQuizSession(userID string) (*models.QuizSession, error) {
+    collection := db.GetCollection()
+    filter := bson.M{"user_id": userID}
+
+    var session models.QuizSession
+    err := collection.FindOne(context.Background(), filter).Decode(&session)
+    if err == mongo.ErrNoDocuments {
+        return nil, nil // No session found
+    }
+    return &session, err
 }
 
 // SaveUserQuizSession saves the updated quiz session to MongoDB
