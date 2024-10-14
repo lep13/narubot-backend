@@ -2,95 +2,329 @@ package services
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 	"log"
+	"math/rand"
+	"os"
+	"strconv"
 	"time"
 
-	"narubot-backend/db"
-	"narubot-backend/models"
+	"github.com/lep13/narubot-backend/db"
+	"github.com/lep13/narubot-backend/models"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // CreateQuizSession initializes a quiz session for a user
-func CreateQuizSession(userID string) (*mongo.InsertOneResult, error) {
-	collection := db.MongoClient.Database("narubot").Collection("quiz_sessions")
+func CreateQuizSession(userID string) (*models.QuizSession, error) {
+	collection := db.GetCollection()
 	session := models.QuizSession{
 		UserID:      userID,
-		CurrentQNo:  0,                    // Start from question 0
-		Scores:      make(map[string]int), // Initialize empty score map
+		CurrentQNo:  0,
+		Scores:      make(map[string]int),
 		IsCompleted: false,
 		LastUpdated: time.Now().Unix(),
 	}
 
-	result, err := collection.InsertOne(context.Background(), session)
+	_, err := collection.InsertOne(context.Background(), session)
 	if err != nil {
 		log.Printf("Error creating session for user %s: %v", userID, err)
 		return nil, err
 	}
-
-	return result, nil
-}
-
-// GetQuizSession retrieves the current session for the user
-func GetQuizSession(userID string) (*models.QuizSession, error) {
-	collection := db.MongoClient.Database("narubot").Collection("quiz_sessions")
-	filter := bson.M{"user_id": userID}
-
-	var session models.QuizSession
-	err := collection.FindOne(context.Background(), filter).Decode(&session)
-	if err == mongo.ErrNoDocuments {
-		// If no session exists, create one
-		CreateQuizSession(userID)
-		return nil, fmt.Errorf("new session created")
-	} else if err != nil {
-		log.Printf("Error retrieving session for user %s: %v", userID, err)
-		return nil, err
-	}
-
 	return &session, nil
 }
 
-// UpdateQuizSession updates the session after each answer
-func UpdateQuizSession(userID string, questionNo int, updatedScores map[string]int) error {
-	collection := db.MongoClient.Database("narubot").Collection("quiz_sessions")
+// GetUserQuizSession retrieves the current session for the user
 
+func GetUserQuizSession(userID string) (*models.QuizSession, error) {
+    collection := db.GetCollection()
+    filter := bson.M{"user_id": userID}
+
+    var session models.QuizSession
+    err := collection.FindOne(context.Background(), filter).Decode(&session)
+    if err == mongo.ErrNoDocuments {
+        return nil, nil // No session found
+    }
+    return &session, err
+}
+
+// SaveUserQuizSession saves the updated quiz session to MongoDB
+func SaveUserQuizSession(userID string, session *models.QuizSession) error {
+	collection := db.GetCollection()
 	filter := bson.M{"user_id": userID}
 	update := bson.M{
 		"$set": bson.M{
-			"current_q_no": questionNo,
-			"scores":       updatedScores,
+			"current_q_no": session.CurrentQNo,
+			"scores":       session.Scores,
+			"is_completed": session.IsCompleted,
 			"last_updated": time.Now().Unix(),
 		},
 	}
 
-	_, err := collection.UpdateOne(context.Background(), filter, update)
+	_, err := collection.UpdateOne(context.Background(), filter, update, options.Update())
 	if err != nil {
-		log.Printf("Error updating session for user %s: %v", userID, err)
+		log.Printf("Error saving session for user %s: %v", userID, err)
 		return err
 	}
-
 	return nil
 }
 
-// CompleteQuizSession marks the quiz as completed
-func CompleteQuizSession(userID string) error {
-	collection := db.MongoClient.Database("narubot").Collection("quiz_sessions")
-
-	filter := bson.M{"user_id": userID}
-	update := bson.M{
-		"$set": bson.M{
-			"is_completed": true,
-			"last_updated": time.Now().Unix(),
-		},
-	}
-
-	_, err := collection.UpdateOne(context.Background(), filter, update)
+// ResetQuizSession clears the session so the user can take the quiz again
+func ResetQuizSession(userID string) error {
+	collection := db.GetCollection()
+	_, err := collection.DeleteOne(context.Background(), bson.M{"user_id": userID})
 	if err != nil {
-		log.Printf("Error marking session as completed for user %s: %v", userID, err)
+		log.Printf("Error resetting session for user %s: %v", userID, err)
 		return err
 	}
-
 	return nil
+}
+
+// TrackQuizResponse updates the user's score based on the selected answer
+func TrackQuizResponse(userID string, answer string) error {
+	session, err := GetUserQuizSession(userID)
+	if err != nil {
+		return fmt.Errorf("failed to retrieve user session: %v", err)
+	}
+
+	questions, err := LoadQuizQuestions("quiz_questions.json")
+	if err != nil {
+		return fmt.Errorf("failed to load quiz questions: %v", err)
+	}
+
+	if session.CurrentQNo-1 >= len(questions) {
+		return fmt.Errorf("no more questions available")
+	}
+
+	currentQuestion := questions[session.CurrentQNo-1]
+	answerIndex, err := strconv.Atoi(answer)
+	if err != nil || answerIndex < 1 || answerIndex > len(currentQuestion.Options) {
+		return fmt.Errorf("invalid answer format or out of range: %v", err)
+	}
+
+	selectedOption := currentQuestion.Options[answerIndex-1]
+	session.Scores[selectedOption.Character] += selectedOption.Score
+
+	return SaveUserQuizSession(userID, session)
+}
+
+// LoadQuizQuestions loads the quiz questions and options from a JSON file
+func LoadQuizQuestions(filename string) ([]models.QuizQuestion, error) {
+	file, err := os.Open(filename)
+	if err != nil {
+		return nil, fmt.Errorf("could not open quiz file: %v", err)
+	}
+	defer file.Close()
+
+	var quizData struct {
+		Questions []models.QuizQuestion `json:"questions"`
+	}
+	decoder := json.NewDecoder(file)
+	err = decoder.Decode(&quizData)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode quiz questions: %v", err)
+	}
+
+	return quizData.Questions, nil
+}
+
+// sendQuizQuestion sends the current question in the session to the user with numbering
+func sendQuizQuestion(userID string, session *models.QuizSession, questions []models.QuizQuestion, accessToken string) error {
+	if session.CurrentQNo >= len(questions) {
+		return FinalizeQuizAndResetSession(userID, session, accessToken)
+	}
+
+	currentQuestion := questions[session.CurrentQNo]
+	questionText := fmt.Sprintf("Question %d: %s", session.CurrentQNo+1, currentQuestion.Question) // Number the question
+	options := extractOptions(currentQuestion.Options)
+	formattedOptions := ""
+	for i, option := range options {
+		formattedOptions += fmt.Sprintf("%d. %s\n", i+1, option)
+	}
+
+	message := fmt.Sprintf("%s\n%s", questionText, formattedOptions)
+	err := SendMessageToWebex(userID, message, accessToken)
+	if err != nil {
+		return fmt.Errorf("failed to send quiz question: %v", err)
+	}
+
+	session.CurrentQNo++
+	return SaveUserQuizSession(userID, session)
+}
+// sendQuizQuestion sends the current question as a simple card framing text
+// func sendQuizQuestion(userID string, session *models.QuizSession, questions []models.QuizQuestion, accessToken string) error {
+// 	if session.CurrentQNo >= len(questions) {
+// 		return FinalizeQuizAndResetSession(userID, session, accessToken)
+// 	}
+
+// 	currentQuestion := questions[session.CurrentQNo]
+// 	questionText := fmt.Sprintf("Question %d: %s\n", session.CurrentQNo+1, currentQuestion.Question)
+// 	for i, option := range currentQuestion.Options {
+// 		questionText += fmt.Sprintf("%d. %s\n", i+1, option.Text)
+// 	}
+
+// 	card := models.CreateTextCard(questionText)
+// 	return SendMessageWithCard(userID, card, accessToken)
+// }
+
+// StartQuiz initializes and sends the first quiz card
+func StartQuiz(userID, accessToken string) error {
+	err := ResetQuizSession(userID)
+	if err != nil {
+		return fmt.Errorf("failed to reset session: %v", err)
+	}
+
+	session, err := CreateQuizSession(userID)
+	if err != nil {
+		return fmt.Errorf("failed to start quiz session: %v", err)
+	}
+
+	questions, err := LoadQuizQuestions("quiz_questions.json")
+	if err != nil {
+		return fmt.Errorf("failed to load quiz questions: %v", err)
+	}
+
+	return sendQuizQuestion(userID, session, questions, accessToken)
+}
+
+// ContinueQuiz sends the next question in the quiz sequence
+func ContinueQuiz(userID string, userAnswer string, accessToken string) error {
+	if userAnswer == "quit" {
+		return HandleQuit(userID, accessToken)
+	}
+
+	err := TrackQuizResponse(userID, userAnswer)
+	if err != nil {
+		return fmt.Errorf("failed to track user response: %v", err)
+	}
+
+	session, err := GetUserQuizSession(userID)
+	if err != nil {
+		return fmt.Errorf("failed to retrieve user session: %v", err)
+	}
+
+	questions, err := LoadQuizQuestions("quiz_questions.json")
+	if err != nil {
+		return fmt.Errorf("failed to load quiz questions: %v", err)
+	}
+
+	if session.CurrentQNo >= len(questions) {
+		return FinalizeQuizAndResetSession(userID, session, accessToken)
+	}
+
+	return sendQuizQuestion(userID, session, questions, accessToken)
+}
+
+// to quit the quiz session.
+func HandleQuit(userID string, accessToken string) error {
+	quitMessage := "You have quit the quiz session. Feel free to start over by saying 'quiz' anytime!"
+	err := SendMessageToWebex(userID, quitMessage, accessToken)
+	if err != nil {
+		return fmt.Errorf("failed to send quit message: %v", err)
+	}
+
+	return ResetQuizSession(userID)
+}
+
+// FinalizeQuizAndResetSession calculates the quiz result, sends it as an image card, and resets the quiz session
+func FinalizeQuizAndResetSession(userID string, session *models.QuizSession, accessToken string) error {
+	// Calculate the result
+	character, err := CalculateQuizResult(session)
+	if err != nil {
+		return fmt.Errorf("failed to calculate quiz result: %v", err)
+	}
+
+	// Load character descriptions
+	descriptions, err := LoadCharacterDescriptions("character_description.json")
+	if err != nil {
+		return fmt.Errorf("failed to load character descriptions: %v", err)
+	}
+
+	// Get the character information
+	characterInfo, exists := descriptions[character]
+	if !exists {
+		characterInfo.Description = "Description not found."
+		characterInfo.Image = ""
+	}
+
+	// Create and send the result card with image and description
+	if characterInfo.Image != "" {
+		card := models.CreateImageCard(characterInfo.Image, fmt.Sprintf("You are most like %s!", character), characterInfo.Description)
+		err := SendMessageWithCard(userID, card, accessToken)
+		if err != nil {
+			return fmt.Errorf("failed to send image card: %v", err)
+		}
+	} else {
+		// Send only text if no image is found for the character
+		finalMessage := fmt.Sprintf("You are most like %s! %s", character, characterInfo.Description)
+		err := SendMessageToWebex(userID, finalMessage, accessToken)
+		if err != nil {
+			return fmt.Errorf("failed to send text message: %v", err)
+		}
+	}
+
+	// Reset the quiz session after the result has been presented
+	return ResetQuizSession(userID)
+}
+
+// Utility function to extract option texts
+func extractOptions(options []models.QuizOption) []string {
+	var opts []string
+	for _, option := range options {
+		opts = append(opts, option.Text)
+	}
+	return opts
+}
+
+// CalculateQuizResult determines which character has the highest score
+func CalculateQuizResult(session *models.QuizSession) (string, error) {
+	highestScore := 0
+	resultCharacters := []string{}
+
+	for character, score := range session.Scores {
+		if score > highestScore {
+			highestScore = score
+			resultCharacters = []string{character}
+		} else if score == highestScore {
+			resultCharacters = append(resultCharacters, character)
+		}
+	}
+
+	var finalCharacter string
+	if len(resultCharacters) > 1 {
+		selectedIndex := rand.Intn(len(resultCharacters))
+		finalCharacter = resultCharacters[selectedIndex]
+	} else {
+		finalCharacter = resultCharacters[0]
+	}
+
+	return finalCharacter, nil
+}
+
+// LoadCharacterDescriptions loads character descriptions from a JSON file
+func LoadCharacterDescriptions(filename string) (map[string]models.CharacterInfo, error) {
+	jsonFile, err := os.Open(filename)
+	if err != nil {
+		return nil, err
+	}
+	defer jsonFile.Close()
+
+	byteValue, err := io.ReadAll(jsonFile)
+	if err != nil {
+		return nil, err
+	}
+
+	var data struct {
+		Characters map[string]models.CharacterInfo `json:"characters"`
+	}
+	err = json.Unmarshal(byteValue, &data)
+	if err != nil {
+		return nil, err
+	}
+
+	return data.Characters, nil
 }

@@ -9,5 +9,5 @@ type Config struct {
     GoogleModelID     string `json:"GOOGLE_MODEL_ID"`
     GoogleRegion      string `json:"GOOGLE_REGION"`
     GenAIAccessToken  string `json:"GENAI_ACCESS_TOKEN"`  // GenAI OAuth token
-    MongoURI          string `json:"MONGO_URI"`           // MongoDB URI for database connection
+    MongoURI          string `json:"MONGO_URI"`           
 }

@@ -1,7 +1,7 @@
 package router
 
 import (
-    "narubot-backend/controllers"
+    "github.com/lep13/narubot-backend/controllers"
     "github.com/gin-gonic/gin"
 )
 
@@ -15,6 +15,7 @@ func SetupRouter() *gin.Engine {
 
     // Webhook endpoint
     r.POST("/webhook", controllers.HandleWebhook)
+    // r.POST("/webhook", controllers.HandleWebhookTestCard) //for test card
 
     return r
 }

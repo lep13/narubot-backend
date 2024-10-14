@@ -1,0 +1,254 @@
+{
+  "questions": [
+    {
+      "question": "What’s your preferred way to handle a conflict?",
+      "options": [
+        {
+          "text": "Talk it out diplomatically",
+          "character": "Sakura",
+          "score": 1
+        },
+        {
+          "text": "Charge in headfirst!",
+          "character": "Naruto",
+          "score": 1
+        },
+        {
+          "text": "Stay calm and think before acting",
+          "character": "Kakashi",
+          "score": 1
+        },
+        {
+          "text": "Manipulate events from behind the scenes",
+          "character": "Itachi",
+          "score": 1
+        }
+      ]
+    },
+    {
+      "question": "How do you view your friends?",
+      "options": [
+        {
+          "text": "They are my most important bonds",
+          "character": "Naruto",
+          "score": 1
+        },
+        {
+          "text": "I distance myself to avoid getting hurt",
+          "character": "Sasuke",
+          "score": 1
+        },
+        {
+          "text": "I’d do anything to protect them",
+          "character": "Hinata",
+          "score": 1
+        },
+        {
+          "text": "I test their loyalty",
+          "character": "Obito",
+          "score": 1
+        }
+      ]
+    },
+    {
+      "question": "What drives you?",
+      "options": [
+        {
+          "text": "Desire for recognition",
+          "character": "Naruto",
+          "score": 1
+        },
+        {
+          "text": "Justice and revenge",
+          "character": "Sasuke",
+          "score": 1
+        },
+        {
+          "text": "Protecting those I love",
+          "character": "Minato",
+          "score": 1
+        },
+        {
+          "text": "Leaving a legacy of wisdom",
+          "character": "Jiraiya",
+          "score": 1
+        }
+      ]
+    },
+    {
+      "question": "What’s your biggest strength?",
+      "options": [
+        {
+          "text": "Physical power and determination",
+          "character": "Naruto",
+          "score": 1
+        },
+        {
+          "text": "Intelligence and strategy",
+          "character": "Kakashi",
+          "score": 1
+        },
+        {
+          "text": "Cunning and resourcefulness",
+          "character": "Obito",
+          "score": 1
+        },
+        {
+          "text": "Compassion and empathy",
+          "character": "Hinata",
+          "score": 1
+        }
+      ]
+    },
+    {
+      "question": "How do you relax after a long day?",
+      "options": [
+        {
+          "text": "Training even more",
+          "character": "Naruto",
+          "score": 1
+        },
+        {
+          "text": "Meditation and reflection",
+          "character": "Kakashi",
+          "score": 1
+        },
+        {
+          "text": "Reading and writing",
+          "character": "Jiraiya",
+          "score": 1
+        },
+        {
+          "text": "Spending time with friends",
+          "character": "Hinata",
+          "score": 1
+        }
+      ]
+    },
+    {
+      "question": "What role do you usually take in a group?",
+      "options": [
+        {
+          "text": "The leader",
+          "character": "Naruto",
+          "score": 1
+        },
+        {
+          "text": "The silent supporter",
+          "character": "Hinata",
+          "score": 1
+        },
+        {
+          "text": "The strategist",
+          "character": "Kakashi",
+          "score": 1
+        },
+        {
+          "text": "The rebel",
+          "character": "Sasuke",
+          "score": 1
+        }
+      ]
+    },
+    {
+      "question": "How do you handle failure?",
+      "options": [
+        {
+          "text": "Push myself harder",
+          "character": "Naruto",
+          "score": 1
+        },
+        {
+          "text": "Withdraw and reflect",
+          "character": "Sasuke",
+          "score": 1
+        },
+        {
+          "text": "Seek guidance from a mentor",
+          "character": "Jiraiya",
+          "score": 1
+        },
+        {
+          "text": "Analyze what went wrong and improve",
+          "character": "Minato",
+          "score": 1
+        }
+      ]
+    },
+    {
+      "question": "What’s your fighting style?",
+      "options": [
+        {
+          "text": "All-out offensive",
+          "character": "Naruto",
+          "score": 1
+        },
+        {
+          "text": "Long-range tactics",
+          "character": "Kakashi",
+          "score": 1
+        },
+        {
+          "text": "Close combat with precision",
+          "character": "Sasuke",
+          "score": 1
+        },
+        {
+          "text": "Support and defense",
+          "character": "Hinata",
+          "score": 1
+        }
+      ]
+    },
+    {
+      "question": "Which is most important to you?",
+      "options": [
+        {
+          "text": "Becoming stronger",
+          "character": "Naruto",
+          "score": 1
+        },
+        {
+          "text": "Protecting loved ones",
+          "character": "Minato",
+          "score": 1
+        },
+        {
+          "text": "Achieving personal goals",
+          "character": "Sasuke",
+          "score": 1
+        },
+        {
+          "text": "Teaching others",
+          "character": "Jiraiya",
+          "score": 1
+        }
+      ]
+    },
+    {
+      "question": "What’s your biggest fear?",
+      "options": [
+        {
+          "text": "Failing those I care about",
+          "character": "Minato",
+          "score": 1
+        },
+        {
+          "text": "Being weak",
+          "character": "Sasuke",
+          "score": 1
+        },
+        {
+          "text": "Losing loved ones",
+          "character": "Hinata",
+          "score": 1
+        },
+        {
+          "text": "Losing my identity",
+          "character": "Obito",
+          "score": 1
+        }
+      ]
+    }
+  ]
+}
