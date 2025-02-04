@@ -2,6 +2,12 @@
 
 NaruBot is a Webex bot that conducts a 10-question quiz based on the Naruto anime series. The bot identifies which Naruto character you most resemble by asking questions and calculating a score based on your responses. Besides the quiz, NaruBot also utilizes Google Vertex AI for responding to non-quiz-related messages, making it a versatile conversational bot.
 
+![1](https://github.com/user-attachments/assets/433af53f-8eab-4e82-b1ce-18923d8dde0a)
+![2](https://github.com/user-attachments/assets/45dea9f4-0c18-4b79-859a-530bdfb794c0)
+![3](https://github.com/user-attachments/assets/4b2d2a74-f176-4b84-90d0-308af2cbd7ea)
+![4](https://github.com/user-attachments/assets/0811d987-4daa-416c-846a-1b6228787066)
+![5](https://github.com/user-attachments/assets/226889cd-bf8b-4454-a4f2-577260a92d0b)
+
 ## Table of Contents
 1. [Prerequisites](#prerequisites)
 2. [Installation](#installation)
@@ -120,7 +126,3 @@ This bot was developed using the following:
 - **Google Vertex AI** for generating conversational responses.
 - **AWS Secrets Manager** for secure storage of configuration secrets.
 - **MongoDB** for storing user quiz session data.
-
----
-
-_Add images here of the bot in quiz mode and non-quiz mode._
